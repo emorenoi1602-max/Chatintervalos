@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shein Chats | OPS Dashboard — Atlantic QI</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg0:#060810;--bg1:#0c1120;--bg2:#111827;--bg3:#1a243a;--bg4:#1f2d48;
+  --border:rgba(255,255,255,0.07);--border2:rgba(0,212,255,0.22);
+  --t1:#dce8f8;--t2:#7a98c0;--t3:#3b4f6b;--t4:#1e2d42;
+  --cyan:#00d4ff;--teal:#00e5b3;--purple:#a855f7;--yellow:#ffd166;
+  --red:#ff4757;--orange:#ff6b35;--green:#2ecc71;--shein:#ff6690;
+  --ff:'Rajdhani',sans-serif;--mono:'JetBrains Mono',monospace;
+  --shadow:0 2px 12px rgba(0,0,0,0.35);
+  --transition:background .25s,color .25s,border-color .25s;
+}
+body.light{
+  --bg0:#f0f4f9;--bg1:#e4eaf3;--bg2:#ffffff;--bg3:#edf2f7;--bg4:#dde5ef;
+  --border:rgba(0,0,0,0.09);--border2:rgba(0,140,190,0.30);
+  --t1:#0d1b2e;--t2:#2e5070;--t3:#6a8aa8;--t4:#a8bfd4;
+  --cyan:#0088bb;--teal:#00a87a;--purple:#7c3aed;--yellow:#b07000;
+  --red:#d42035;--orange:#c4520a;--shein:#d44060;
+  --shadow:0 2px 16px rgba(0,0,0,0.10);
+}
+body,body *{transition:var(--transition);}
+body.light .hdr{background:linear-gradient(135deg,#dce6f2,#eaf0f8 60%,#e2ecf6)!important;}
+body.light .kcard{box-shadow:var(--shadow);}
+body.light .cpanel,body.light .interval-panel,body.light .tpanel,
+body.light .hm-panel,body.light .ot-panel{box-shadow:var(--shadow);}
+body.light .icard{box-shadow:var(--shadow);}
+body.light tbody tr:hover{background:#e4edf8;}
+body.light .ttip{background:#fff;color:#0d1b2e;box-shadow:0 4px 16px rgba(0,0,0,.18);}
+body.light .merge-preview{background:#edf2f7;}
+body.light .modal{background:#ffffff;border-color:rgba(0,140,190,0.22);}
+body.light .mfield input,body.light .mfield select{background:#f4f7fc;color:#0d1b2e;}
+body.light .mbtn-cancel{background:#edf2f7;color:#2e5070;}
+body.light .brand-icon{box-shadow:0 0 18px rgba(212,64,96,0.25);}
+body.light .upload-fab{box-shadow:0 4px 20px rgba(124,58,237,0.25);}
+
+/* theme toggle */
+.theme-toggle{
+  width:32px;height:32px;border-radius:50%;
+  border:1px solid var(--border);background:var(--bg3);
+  color:var(--t1);font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:transform .3s,border-color .2s,background .2s;
+}
+.theme-toggle:hover{border-color:var(--cyan);transform:rotate(22deg) scale(1.1);}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{font-size:15px;}
+body{font-family:var(--ff);background:var(--bg0);color:var(--t1);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg0);}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px;}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#070a16,#0c1525 60%,#08111f);border-bottom:1px solid var(--border);
+  padding:11px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:200;backdrop-filter:blur(12px);}
+.brand{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.brand-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--shein),var(--purple));border-radius:7px;
+  display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 18px rgba(255,102,144,0.35);}
+.brand-title{font-size:16px;font-weight:700;letter-spacing:2.5px;line-height:1.1;}
+.brand-sub{font-size:8.5px;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;font-family:var(--mono);}
+.hdiv{width:1px;height:30px;background:var(--border);flex-shrink:0;}
+.filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;}
+.flbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);white-space:nowrap;}
+select,.fbtn{background:var(--bg2);border:1px solid var(--border);color:var(--t1);
+  padding:5px 9px;border-radius:5px;font-family:var(--ff);font-size:12px;cursor:pointer;transition:all .18s;outline:none;}
+select:hover,.fbtn:hover{border-color:var(--cyan);background:var(--bg3);}
+.fbtn.active{background:rgba(0,212,255,0.1);border-color:var(--cyan);color:var(--cyan);}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.live{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--teal);}
+.ldot{width:6px;height:6px;background:var(--teal);border-radius:50%;animation:blink 1.8s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+.ts{font-family:var(--mono);font-size:9px;color:var(--t3);}
+
+/* MAIN */
+.main{padding:16px 20px 32px;max-width:1700px;margin:0 auto;}
+
+/* SECTION HEADER */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;flex-wrap:wrap;gap:8px;}
+.stitle{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--t2);display:flex;align-items:center;gap:8px;font-family:var(--mono);}
+.stitle::before{content:'';display:block;width:3px;height:13px;background:var(--cyan);border-radius:2px;}
+.smeta{font-size:9px;color:var(--t3);font-family:var(--mono);}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:9px;margin-bottom:16px;}
+@media(max-width:1400px){.kpi-grid{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:700px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+
+.kcard{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s;cursor:default;}
+.kcard:hover{transform:translateY(-2px);}
+.kcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:8px 8px 0 0;}
+.kcard.good{border-color:rgba(0,229,179,0.22);}
+.kcard.good::before{background:linear-gradient(90deg,var(--teal),#00b894);}
+.kcard.good:hover{box-shadow:0 4px 20px rgba(0,229,179,0.12);}
+.kcard.warn{border-color:rgba(255,209,102,0.22);}
+.kcard.warn::before{background:linear-gradient(90deg,var(--yellow),#e07b00);}
+.kcard.warn:hover{box-shadow:0 4px 20px rgba(255,209,102,0.12);}
+.kcard.bad{border-color:rgba(255,71,87,0.28);}
+.kcard.bad::before{background:linear-gradient(90deg,var(--red),var(--orange));}
+.kcard.bad:hover{box-shadow:0 4px 20px rgba(255,71,87,0.12);}
+.kcard.neutral{border-color:rgba(0,212,255,0.14);}
+.kcard.neutral::before{background:linear-gradient(90deg,var(--cyan),var(--purple));}
+
+.klbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);font-family:var(--mono);margin-bottom:4px;display:flex;align-items:center;gap:5px;}
+.tti{width:12px;height:12px;border-radius:50%;border:1px solid var(--t3);display:flex;align-items:center;justify-content:center;font-size:7px;cursor:help;position:relative;flex-shrink:0;}
+.tti:hover .ttip{display:block;}
+.ttip{display:none;position:absolute;bottom:130%;left:50%;transform:translateX(-50%);background:#1e2d48;border:1px solid var(--border2);color:var(--t1);font-size:9px;padding:6px 10px;border-radius:5px;z-index:999;font-family:var(--mono);letter-spacing:0;text-transform:none;box-shadow:0 4px 16px rgba(0,0,0,.5);pointer-events:none;max-width:280px;white-space:pre-line;line-height:1.5;}
+.kval{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:3px;font-family:var(--mono);line-height:1;}
+.kcard.good .kval{color:var(--teal);}
+.kcard.warn .kval{color:var(--yellow);}
+.kcard.bad .kval{color:var(--red);}
+.kcard.neutral .kval{color:var(--cyan);}
+.kmeta{display:flex;align-items:center;justify-content:space-between;margin-top:4px;}
+.kgoal{font-size:8.5px;color:var(--t3);font-family:var(--mono);}
+.kst{font-size:9.5px;font-weight:600;}
+.kcard.good .kst{color:var(--teal);}
+.kcard.warn .kst{color:var(--yellow);}
+.kcard.bad .kst{color:var(--red);}
+.kcard.neutral .kst{color:var(--cyan);}
+.ktrd{font-size:8.5px;color:var(--t3);font-family:var(--mono);margin-top:2px;}
+.mpb-wrap{display:flex;align-items:center;gap:5px;margin-top:4px;}
+.mpb-bg{height:3px;background:var(--bg4);border-radius:2px;flex:1;overflow:hidden;}
+.mpb-fill{height:100%;border-radius:2px;transition:width .6s ease;}
+
+/* CHARTS ROW */
+.charts-row{display:grid;grid-template-columns:1.65fr 1fr;gap:11px;margin-bottom:16px;}
+@media(max-width:1100px){.charts-row{grid-template-columns:1fr;}}
+.cpanel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.cph{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap;}
+.ctitle{font-size:12px;font-weight:600;letter-spacing:.3px;}
+.csub{font-size:8.5px;color:var(--t3);font-family:var(--mono);}
+.ctrls{display:flex;gap:5px;flex-wrap:wrap;}
+.btn-xs{background:var(--bg3);border:1px solid var(--border);color:var(--t2);padding:3px 7px;border-radius:4px;font-size:9px;cursor:pointer;font-family:var(--mono);transition:all .15s;white-space:nowrap;}
+.btn-xs:hover,.btn-xs.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,255,0.08);}
+.cwrap{position:relative;height:215px;}
+
+/* INTERVAL */
+.interval-panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;}
+.iwrap{position:relative;height:180px;}
+.tz-toggle{display:flex;align-items:center;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px;}
+.tz-btn{padding:3px 9px;border-radius:4px;font-size:9px;font-family:var(--mono);cursor:pointer;border:none;background:transparent;color:var(--t3);transition:all .18s;white-space:nowrap;}
+.tz-btn.active{background:var(--bg4);color:var(--t1);border:1px solid var(--border2);}
+.tz-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:4px;font-size:9px;font-family:var(--mono);background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.18);color:var(--cyan);}
+.iv-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap;gap:6px;}
+.iv-note{font-size:8.5px;font-family:var(--mono);color:var(--t3);}
+
+/* HEATMAP */
+.hm-panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;overflow-x:auto;}
+.hm-inner{min-width:600px;}
+.hm-hdr{display:flex;gap:2px;margin-bottom:2px;}
+.hm-alcol{width:115px;flex-shrink:0;font-size:8px;color:var(--t3);font-family:var(--mono);text-transform:uppercase;padding:2px 4px;letter-spacing:.5px;}
+.hm-dlbl{flex:1;min-width:22px;font-size:7.5px;color:var(--t3);font-family:var(--mono);text-align:center;padding:2px 0;}
+.hm-row{display:flex;align-items:center;gap:2px;margin-bottom:2px;}
+.hm-aname{width:115px;flex-shrink:0;font-size:10px;color:var(--t2);font-weight:500;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hm-cell{flex:1;min-width:22px;height:21px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:7px;font-family:var(--mono);color:rgba(0,0,0,.8);cursor:default;transition:transform .12s;position:relative;}
+.hm-cell:hover{transform:scale(1.3);z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.5);}
+.hm-legend{display:flex;align-items:center;gap:7px;margin-top:9px;justify-content:flex-end;}
+.hm-leg-lbl{font-size:8.5px;color:var(--t3);font-family:var(--mono);}
+.hm-leg-scale{display:flex;gap:2px;}
+.hm-leg-box{width:16px;height:8px;border-radius:2px;}
+
+/* ONLINE TIME */
+.ot-panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;}
+.ot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:9px;margin-top:10px;}
+.ot-card{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:10px 12px;}
+.ot-name{font-size:11px;font-weight:600;margin-bottom:6px;}
+.ot-bar-bg{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-bottom:5px;}
+.ot-bar-fill{height:100%;border-radius:3px;transition:width .5s ease;}
+.ot-nums{display:flex;justify-content:space-between;align-items:center;}
+.ot-val{font-family:var(--mono);font-size:11px;font-weight:700;}
+.ot-goal{font-family:var(--mono);font-size:8px;color:var(--t3);}
+
+/* TABLE */
+.tpanel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;}
+thead th{padding:7px 10px;text-align:left;font-size:8px;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;}
+thead th:hover{color:var(--cyan);}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.03);transition:background .12s;}
+tbody tr:hover{background:var(--bg3);}
+tbody td{padding:7px 10px;white-space:nowrap;}
+.td-ag{font-family:var(--ff);font-size:12px;font-weight:600;color:var(--t1);}
+.td-ulp{font-size:8px;color:var(--t3);}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:10px;font-size:8.5px;font-weight:600;font-family:var(--mono);}
+.bg-good{background:rgba(0,229,179,.11);color:var(--teal);}
+.bg-warn{background:rgba(255,209,102,.11);color:var(--yellow);}
+.bg-bad{background:rgba(255,71,87,.13);color:var(--red);}
+.vg{color:var(--teal);}
+.vw{color:var(--yellow);}
+.vb{color:var(--red);}
+.vn{color:var(--t2);}
+
+/* INSIGHTS */
+.ins-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:16px;}
+@media(max-width:1100px){.ins-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:700px){.ins-grid{grid-template-columns:1fr;}}
+.icard{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px;}
+.ihdr{display:flex;align-items:center;gap:7px;margin-bottom:9px;}
+.iico{font-size:14px;}
+.ititle{font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--t2);font-family:var(--mono);}
+.iitem{display:flex;align-items:flex-start;gap:7px;padding:6px 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--t1);line-height:1.4;}
+.iitem:last-child{border-bottom:none;}
+.idot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.id-r{background:var(--red);}
+.id-y{background:var(--yellow);}
+.id-g{background:var(--teal);}
+.id-b{background:var(--cyan);}
+.id-p{background:var(--purple);}
+
+.footer{text-align:center;padding:18px;font-family:var(--mono);font-size:8.5px;color:var(--t4);border-top:1px solid var(--border);margin-top:18px;}
+
+/* UPLOAD MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:28px 32px;width:min(520px,94vw);max-height:90vh;overflow-y:auto;}
+.modal h2{font-size:15px;font-weight:700;letter-spacing:1.5px;margin-bottom:4px;}
+.modal p{font-size:11px;color:var(--t2);margin-bottom:16px;line-height:1.55;font-family:var(--mono);}
+.mfield{margin-bottom:13px;}
+.mfield label{display:block;font-size:9px;color:var(--t3);font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.mfield input,.mfield select{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--t1);padding:7px 10px;border-radius:5px;font-family:var(--mono);font-size:11px;outline:none;transition:border-color .15s;}
+.mfield input:focus,.mfield select:focus{border-color:var(--cyan);}
+.mfield input[type=file]{cursor:pointer;padding:6px 10px;}
+.mbtn-row{display:flex;gap:9px;justify-content:flex-end;margin-top:18px;}
+.mbtn{padding:7px 18px;border-radius:6px;font-family:var(--ff);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.mbtn-cancel{background:var(--bg3);color:var(--t2);border:1px solid var(--border);}
+.mbtn-cancel:hover{border-color:var(--t2);color:var(--t1);}
+.mbtn-primary{background:linear-gradient(135deg,var(--cyan),var(--teal));color:#060810;}
+.mbtn-primary:hover{opacity:.88;transform:translateY(-1px);}
+.mbtn-primary:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+.mstatus{margin-top:12px;font-family:var(--mono);font-size:10px;min-height:18px;line-height:1.5;}
+.mstatus.ok{color:var(--teal);}
+.mstatus.err{color:var(--red);}
+.mstatus.info{color:var(--cyan);}
+.progress-bar{height:4px;background:var(--bg4);border-radius:2px;margin-top:8px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--teal));border-radius:2px;transition:width .3s ease;width:0%;}
+.token-note{font-size:9px;color:var(--t3);font-family:var(--mono);margin-top:4px;line-height:1.5;}
+.upload-fab{
+  position:fixed;bottom:24px;right:24px;z-index:300;
+  background:linear-gradient(135deg,var(--shein),var(--purple));
+  border:none;border-radius:50px;padding:11px 20px;
+  color:#fff;font-family:var(--ff);font-size:13px;font-weight:700;letter-spacing:1px;
+  cursor:pointer;box-shadow:0 4px 20px rgba(168,85,247,.4);
+  display:flex;align-items:center;gap:7px;transition:all .18s;
+}
+.upload-fab:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(168,85,247,.55);}
+.merge-preview{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 13px;margin-top:10px;font-family:var(--mono);font-size:10px;line-height:1.8;}
+.merge-preview .mp-row{display:flex;justify-content:space-between;gap:16px;}
+.mp-label{color:var(--t3);}
+.mp-val{color:var(--t1);font-weight:600;}
+.mp-new{color:var(--teal);}
+.mp-kept{color:var(--cyan);}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="brand">
+    <div class="brand-icon">💬</div>
+    <div>
+      <div class="brand-title">SHEIN CHATS</div>
+      <div class="brand-sub">OPS Dashboard · Atlantic QI · Barranquilla</div>
+    </div>
+  </div>
+  <div class="hdiv"></div>
+  <div class="filters">
+    <span class="flbl">Vista:</span>
+    <button class="fbtn" id="btn-mes" onclick="setView('mes')">Mes</button>
+    <button class="fbtn" id="btn-semana" onclick="setView('semana')">Semana</button>
+    <button class="fbtn" id="btn-dia" onclick="setView('dia')">Día</button>
+    <div class="hdiv"></div>
+    <span class="flbl">📅 Mes:</span>
+    <select id="sel-month" onchange="updateMonth()"></select>
+    <div class="hdiv"></div>
+    <span class="flbl">Semana:</span>
+    <select id="sel-semana" onchange="updateFilters()"><option value="all">Todas</option></select>
+    <span class="flbl">Día:</span>
+    <select id="sel-dia" onchange="updateFilters()"><option value="all">Todos</option></select>
+    <span class="flbl">Asesor:</span>
+    <select id="sel-asesor" onchange="updateFilters()"><option value="all">Todos</option></select>
+  </div>
+  <div class="hdr-right">
+    <div class="live"><div class="ldot"></div><span>DATOS REALES</span></div>
+    <div class="ts" id="ts-now"></div>
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="Cambiar tema claro/oscuro">🌙</button>
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="sh">
+    <div class="stitle">KPIs Principales</div>
+    <div class="smeta" id="kpi-period-label"></div>
+  </div>
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <div class="sh">
+    <div class="stitle">Tiempo en Línea por Asesor</div>
+    <div class="smeta">Meta diaria: 6.5 H · Acumulado período filtrado</div>
+  </div>
+  <div class="ot-panel">
+    <div class="ot-grid" id="ot-grid"></div>
+  </div>
+
+  <div class="sh">
+    <div class="stitle">Tendencia Diaria & Performance por Asesor</div>
+  </div>
+  <div class="charts-row">
+    <div class="cpanel">
+      <div class="cph">
+        <div><div class="ctitle">Evolución de KPI — Por Fecha</div><div class="csub">Período filtrado · línea de meta incluida</div></div>
+        <div class="ctrls" id="trend-btns"></div>
+      </div>
+      <div class="cwrap"><canvas id="chart-trend"></canvas></div>
+    </div>
+    <div class="cpanel">
+      <div class="cph">
+        <div><div class="ctitle">Ranking por Asesor</div><div class="csub">KPI seleccionado vs meta global</div></div>
+        <select id="bar-kpi-sel" class="btn-xs" style="padding:4px 8px;font-size:10px;" onchange="renderAgentBar()">
+          <option value="tph">TPH</option>
+          <option value="dsat">DSAT %</option>
+          <option value="s30s1">30s1 %</option>
+          <option value="s30s2">30s2 %</option>
+          <option value="missRate">Miss Rate %</option>
+          <option value="aht">AHT min</option>
+          <option value="onlineH">Online Time H</option>
+        </select>
+      </div>
+      <div class="cwrap"><canvas id="chart-agents"></canvas></div>
+    </div>
+  </div>
+
+  <div class="sh">
+    <div class="stitle">Análisis por Intervalo Horario — Tendencia de Tráfico Real</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <span class="smeta">KPI:</span>
+      <select id="iv-kpi-sel" class="btn-xs" style="padding:4px 8px;font-size:10px;" onchange="renderIntervalChart()">
+        <option value="volume">📊 Volumen de Chats</option>
+        <option value="tph">⚡ TPH</option>
+        <option value="dsat">😞 DSAT %</option>
+        <option value="s30s1">⏱ 30s1 %</option>
+        <option value="s30s2">🏃 30s2 %</option>
+        <option value="missRate">📵 Miss Rate %</option>
+        <option value="aht">⏰ AHT (min)</option>
+      </select>
+      <div class="hdiv" style="height:22px;"></div>
+      <span class="smeta">Zona horaria:</span>
+      <div class="tz-toggle">
+        <button class="tz-btn" id="tz-cn" onclick="setTZ('CN')">🇨🇳 China (UTC+8)</button>
+        <button class="tz-btn active" id="tz-co" onclick="setTZ('CO')">🇨🇴 Colombia (UTC−5)</button>
+      </div>
+    </div>
+  </div>
+  <div class="interval-panel">
+    <div class="iwrap"><canvas id="chart-interval"></canvas></div>
+    <div class="iv-footer">
+      <span class="iv-note" id="iv-tz-note"></span>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <span class="tz-badge" id="iv-peak-badge"></span>
+        <span class="tz-badge" id="iv-low-badge"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sh">
+    <div class="stitle">Heatmap — Asesor × Día</div>
+    <div class="ctrls" id="hm-kpi-btns"></div>
+  </div>
+  <div class="hm-panel">
+    <div class="hm-inner" id="hm-container"></div>
+    <div class="hm-legend">
+      <span class="hm-leg-lbl">Bajo desempeño</span>
+      <div class="hm-leg-scale" id="hm-legend"></div>
+      <span class="hm-leg-lbl">Alto desempeño</span>
+    </div>
+  </div>
+
+  <div class="sh">
+    <div class="stitle">Detalle por Asesor</div>
+    <span class="smeta">Clic en encabezados para ordenar</span>
+  </div>
+  <div class="tpanel">
+    <table>
+      <thead>
+        <tr>
+          <th>ASESOR</th>
+          <th onclick="sortTable('dsat')">DSAT ↕</th>
+          <th onclick="sortTable('aht')">AHT ↕</th>
+          <th onclick="sortTable('tph')">TPH ↕</th>
+          <th onclick="sortTable('onlineH')">ONLINE H ↕</th>
+          <th onclick="sortTable('servingRate')">SERVING RATE ↕</th>
+          <th onclick="sortTable('s30s1')">30S1 ↕</th>
+          <th onclick="sortTable('s30s2')">30S2 ↕</th>
+          <th onclick="sortTable('missRate')">MISS RATE ↕</th>
+          <th onclick="sortTable('served')">CHATS ↕</th>
+          <th>ESTADO</th>
+        </tr>
+      </thead>
+      <tbody id="tbl-body"></tbody>
+    </table>
+  </div>
+
+  <div class="sh"><div class="stitle">Insights Automáticos & Recomendaciones</div></div>
+  <div class="ins-grid" id="ins-grid"></div>
+
+</main>
+
+<footer class="footer">
+  Shein Chats OPS Dashboard · Atlantic Quantum Innovation SAS · Barranquilla, Colombia · Datos reales Abril 2026 · Atlantic QI Data Marshall
+</footer>
+
+<script>
+'use strict';
+const DB_EMBEDDED={"agents":[{"ulp":"ATLCOLBAQ314","name":"Andrés Ruíz"},{"ulp":"ATLCOLBAQ240","name":"Camilo Salgado"},{"ulp":"ATLCOLBAQ236","name":"Camilo Tapia"},{"ulp":"ATLCOLBAQ158","name":"Cesar Albino"},{"ulp":"ATLCOLBAQ30","name":"Danna Tobar"},{"ulp":"ATLCOLBAQ60","name":"Dayana Diaz"},{"ulp":"ATLCOLBAQ155","name":"Diana Rojas"},{"ulp":"ATLCOLBAQ57","name":"Diego Reyes"},{"ulp":"ATLCOLBAQ136","name":"Genesis Alvarino"},{"ulp":"ATLCOLBAQ205","name":"Juan Aldana"},{"ulp":"ATLCOLBAQ261","name":"Luis Caballero"},{"ulp":"ATLCOLBAQ315","name":"Luisa Castillo"},{"ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra"},{"ulp":"ATLCOLBAQ247","name":"Mireya Mayorga"},{"ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez"},{"ulp":"ATLCOLBAQ204","name":"Oner Ebratt"},{"ulp":"ATLCOLBAQ265","name":"Ray Carlier"},{"ulp":"ATLCOLBAQ118","name":"Yaklin Soto"},{"ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera"}],"daily":[{"date":"2026-03-31","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.0,"aht":9.4736,"tph":20.3898,"servingRate":1.0465,"s30s1":1.0,"s30s2":0.9815,"missRate":0.0,"onlineH":6.67,"served":136,"assignedReplied":136,"bad":0,"missed":0},{"date":"2026-03-31","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.008696,"aht":9.6689,"tph":17.6651,"servingRate":1.1137,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.51,"served":115,"assignedReplied":115,"bad":1,"missed":0},{"date":"2026-03-31","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.008696,"aht":8.2078,"tph":19.5911,"servingRate":1.0835,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.87,"served":115,"assignedReplied":115,"bad":1,"missed":0},{"date":"2026-03-31","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.018868,"aht":12.121,"tph":22.3629,"servingRate":1.0802,"s30s1":0.6667,"s30s2":1.0,"missRate":0.0,"onlineH":4.74,"served":106,"assignedReplied":106,"bad":2,"missed":0},{"date":"2026-03-31","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.015385,"aht":10.774,"tph":23.1317,"servingRate":1.0658,"s30s1":0.8391,"s30s2":0.9936,"missRate":0.0076,"onlineH":5.62,"served":130,"assignedReplied":130,"bad":2,"missed":1},{"date":"2026-03-31","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.026087,"aht":9.5036,"tph":17.6923,"servingRate":1.0585,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.5,"served":115,"assignedReplied":115,"bad":3,"missed":0},{"date":"2026-03-31","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.014085,"aht":12.3724,"tph":13.6276,"servingRate":1.048,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.21,"served":71,"assignedReplied":71,"bad":1,"missed":0},{"date":"2026-03-31","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.012121,"aht":8.3662,"tph":28.2051,"servingRate":1.0974,"s30s1":0.9459,"s30s2":1.0,"missRate":0.0,"onlineH":5.85,"served":165,"assignedReplied":165,"bad":2,"missed":0},{"date":"2026-03-31","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.012195,"aht":8.5554,"tph":35.0427,"servingRate":1.3376,"s30s1":0.8644,"s30s2":1.0,"missRate":0.0,"onlineH":2.34,"served":82,"assignedReplied":82,"bad":1,"missed":0},{"date":"2026-03-31","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.007752,"aht":9.8747,"tph":26.7635,"servingRate":1.1286,"s30s1":0.8681,"s30s2":1.0,"missRate":0.0,"onlineH":4.82,"served":129,"assignedReplied":129,"bad":1,"missed":0},{"date":"2026-03-31","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.005747,"aht":7.5474,"tph":33.9844,"servingRate":1.0684,"s30s1":0.7815,"s30s2":1.0,"missRate":0.0,"onlineH":5.12,"served":174,"assignedReplied":174,"bad":1,"missed":0},{"date":"2026-04-01","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.02381,"aht":8.8888,"tph":19.3846,"servingRate":1.0677,"s30s1":0.9888,"s30s2":0.9932,"missRate":0.0,"onlineH":6.5,"served":126,"assignedReplied":126,"bad":3,"missed":0},{"date":"2026-04-01","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.013889,"aht":7.1408,"tph":22.3602,"servingRate":1.0714,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.44,"served":144,"assignedReplied":144,"bad":2,"missed":0},{"date":"2026-04-01","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.023077,"aht":11.4535,"tph":22.1088,"servingRate":1.102,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.88,"served":130,"assignedReplied":130,"bad":3,"missed":0},{"date":"2026-04-01","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.009009,"aht":9.9179,"tph":17.0507,"servingRate":1.0599,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.51,"served":111,"assignedReplied":111,"bad":1,"missed":0},{"date":"2026-04-01","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.027027,"aht":9.1701,"tph":18.5309,"servingRate":1.0501,"s30s1":1.0,"s30s2":0.9924,"missRate":0.0089,"onlineH":5.99,"served":111,"assignedReplied":111,"bad":3,"missed":1},{"date":"2026-04-01","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.018519,"aht":10.509,"tph":16.5644,"servingRate":1.0537,"s30s1":0.9859,"s30s2":0.9918,"missRate":0.0,"onlineH":6.52,"served":108,"assignedReplied":108,"bad":2,"missed":0},{"date":"2026-04-01","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.044199,"aht":8.4065,"tph":26.6962,"servingRate":1.0251,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.78,"served":181,"assignedReplied":181,"bad":8,"missed":0},{"date":"2026-04-01","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.018349,"aht":9.4467,"tph":27.5253,"servingRate":1.1187,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":3.96,"served":109,"assignedReplied":109,"bad":2,"missed":0},{"date":"2026-04-01","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.02459,"aht":12.608,"tph":18.7117,"servingRate":1.0307,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.52,"served":122,"assignedReplied":122,"bad":3,"missed":0},{"date":"2026-04-01","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.020548,"aht":9.0693,"tph":27.8626,"servingRate":1.0248,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.24,"served":146,"assignedReplied":146,"bad":3,"missed":0},{"date":"2026-04-01","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.012903,"aht":8.2905,"tph":25.0809,"servingRate":1.0324,"s30s1":0.9796,"s30s2":0.9771,"missRate":0.0064,"onlineH":6.18,"served":155,"assignedReplied":155,"bad":2,"missed":1},{"date":"2026-04-02","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.018987,"aht":8.9133,"tph":24.196,"servingRate":1.0949,"s30s1":0.9279,"s30s2":1.0,"missRate":0.0,"onlineH":6.53,"served":158,"assignedReplied":158,"bad":3,"missed":0},{"date":"2026-04-02","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.007092,"aht":7.6236,"tph":23.4609,"servingRate":1.0383,"s30s1":0.8889,"s30s2":1.0,"missRate":0.0,"onlineH":6.01,"served":141,"assignedReplied":141,"bad":1,"missed":0},{"date":"2026-04-02","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.02459,"aht":12.0088,"tph":19.0625,"servingRate":1.0531,"s30s1":0.8974,"s30s2":1.0,"missRate":0.0,"onlineH":6.4,"served":122,"assignedReplied":122,"bad":3,"missed":0},{"date":"2026-04-02","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.026087,"aht":10.2839,"tph":17.9128,"servingRate":1.0514,"s30s1":0.9277,"s30s2":1.0,"missRate":0.0,"onlineH":6.42,"served":115,"assignedReplied":115,"bad":3,"missed":0},{"date":"2026-04-02","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.037594,"aht":9.9879,"tph":22.5806,"servingRate":1.0985,"s30s1":0.9565,"s30s2":0.9932,"missRate":0.0075,"onlineH":5.89,"served":133,"assignedReplied":133,"bad":5,"missed":1},{"date":"2026-04-02","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.020408,"aht":8.3044,"tph":22.0721,"servingRate":1.0405,"s30s1":0.8785,"s30s2":0.9882,"missRate":0.0,"onlineH":6.66,"served":147,"assignedReplied":147,"bad":3,"missed":0},{"date":"2026-04-02","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.0,"aht":10.6048,"tph":17.0877,"servingRate":1.0178,"s30s1":0.8851,"s30s2":1.0,"missRate":0.0,"onlineH":6.73,"served":115,"assignedReplied":115,"bad":0,"missed":0},{"date":"2026-04-02","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.025907,"aht":7.7083,"tph":29.6923,"servingRate":1.0846,"s30s1":0.845,"s30s2":0.9905,"missRate":0.0,"onlineH":6.5,"served":193,"assignedReplied":193,"bad":5,"missed":0},{"date":"2026-04-02","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.014085,"aht":8.8958,"tph":28.5714,"servingRate":1.0382,"s30s1":0.8913,"s30s2":1.0,"missRate":0.0,"onlineH":4.97,"served":142,"assignedReplied":142,"bad":2,"missed":0},{"date":"2026-04-02","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.0,"aht":11.1017,"tph":21.911,"servingRate":1.089,"s30s1":0.8434,"s30s2":1.0,"missRate":0.0,"onlineH":6.07,"served":133,"assignedReplied":133,"bad":0,"missed":0},{"date":"2026-04-02","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.021127,"aht":8.2811,"tph":31.4856,"servingRate":1.0443,"s30s1":0.9271,"s30s2":1.0,"missRate":0.0,"onlineH":4.51,"served":142,"assignedReplied":142,"bad":3,"missed":0},{"date":"2026-04-02","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.017544,"aht":8.477,"tph":26.8446,"servingRate":1.0377,"s30s1":0.8707,"s30s2":1.0,"missRate":0.0,"onlineH":6.37,"served":171,"assignedReplied":171,"bad":3,"missed":0},{"date":"2026-04-03","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.0,"aht":8.9979,"tph":17.7258,"servingRate":1.0953,"s30s1":1.0,"s30s2":0.9915,"missRate":0.0,"onlineH":5.98,"served":106,"assignedReplied":106,"bad":0,"missed":0},{"date":"2026-04-03","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.0125,"aht":8.5897,"tph":17.1674,"servingRate":1.0515,"s30s1":1.0,"s30s2":0.989,"missRate":0.0,"onlineH":4.66,"served":80,"assignedReplied":79,"bad":1,"missed":0},{"date":"2026-04-03","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.02381,"aht":11.708,"tph":15.0808,"servingRate":1.0646,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.57,"served":84,"assignedReplied":84,"bad":2,"missed":0},{"date":"2026-04-03","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.023529,"aht":9.5572,"tph":15.1786,"servingRate":1.1196,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.6,"served":85,"assignedReplied":85,"bad":2,"missed":0},{"date":"2026-04-03","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.033898,"aht":9.2149,"tph":19.8653,"servingRate":1.0606,"s30s1":1.0,"s30s2":0.9924,"missRate":0.0084,"onlineH":5.94,"served":118,"assignedReplied":118,"bad":4,"missed":1},{"date":"2026-04-03","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.027778,"aht":6.9127,"tph":19.1829,"servingRate":1.0426,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.63,"served":108,"assignedReplied":108,"bad":3,"missed":0},{"date":"2026-04-03","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.024691,"aht":11.1351,"tph":13.2137,"servingRate":1.0587,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.13,"served":81,"assignedReplied":81,"bad":2,"missed":0},{"date":"2026-04-03","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.020833,"aht":7.2668,"tph":24.1206,"servingRate":1.062,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.97,"served":144,"assignedReplied":144,"bad":3,"missed":0},{"date":"2026-04-03","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.0,"aht":7.7488,"tph":22.7513,"servingRate":1.0617,"s30s1":1.0,"s30s2":0.9932,"missRate":0.0,"onlineH":5.67,"served":129,"assignedReplied":128,"bad":0,"missed":0},{"date":"2026-04-03","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.0,"aht":10.4543,"tph":17.3993,"servingRate":1.0696,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.46,"served":95,"assignedReplied":95,"bad":0,"missed":0},{"date":"2026-04-03","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.017699,"aht":8.9136,"tph":19.4158,"servingRate":1.0601,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.82,"served":113,"assignedReplied":113,"bad":2,"missed":0},{"date":"2026-04-04","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.029851,"aht":8.9094,"tph":19.7932,"servingRate":1.0414,"s30s1":0.9891,"s30s2":0.9732,"missRate":0.0,"onlineH":6.77,"served":134,"assignedReplied":134,"bad":4,"missed":0},{"date":"2026-04-04","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.0,"aht":9.6754,"tph":15.9942,"servingRate":1.0043,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.94,"served":111,"assignedReplied":111,"bad":0,"missed":0},{"date":"2026-04-04","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.008264,"aht":8.1974,"tph":19.1759,"servingRate":1.0571,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.31,"served":121,"assignedReplied":121,"bad":1,"missed":0},{"date":"2026-04-04","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.017241,"aht":11.8233,"tph":17.9845,"servingRate":1.0698,"s30s1":0.9296,"s30s2":0.9921,"missRate":0.0,"onlineH":6.45,"served":116,"assignedReplied":116,"bad":2,"missed":0},{"date":"2026-04-04","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.0,"aht":10.585,"tph":16.129,"servingRate":1.0645,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.51,"served":105,"assignedReplied":105,"bad":0,"missed":0},{"date":"2026-04-04","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.008403,"aht":11.3678,"tph":17.6296,"servingRate":1.0148,"s30s1":0.9512,"s30s2":1.0,"missRate":0.0,"onlineH":6.75,"served":119,"assignedReplied":119,"bad":1,"missed":0},{"date":"2026-04-04","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.010526,"aht":10.3959,"tph":14.6379,"servingRate":1.0169,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.49,"served":95,"assignedReplied":95,"bad":1,"missed":0},{"date":"2026-04-04","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.019481,"aht":7.5099,"tph":29.7872,"servingRate":1.058,"s30s1":0.951,"s30s2":1.0,"missRate":0.0,"onlineH":5.17,"served":154,"assignedReplied":154,"bad":3,"missed":0},{"date":"2026-04-04","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.015873,"aht":10.9041,"tph":19.062,"servingRate":1.0469,"s30s1":0.9647,"s30s2":1.0,"missRate":0.0,"onlineH":6.61,"served":126,"assignedReplied":126,"bad":2,"missed":0},{"date":"2026-04-04","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.012658,"aht":8.3945,"tph":23.7952,"servingRate":1.006,"s30s1":0.963,"s30s2":1.0,"missRate":0.0,"onlineH":6.64,"served":158,"assignedReplied":158,"bad":2,"missed":0},{"date":"2026-04-04","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.005435,"aht":6.7488,"tph":27.3403,"servingRate":1.0253,"s30s1":0.9914,"s30s2":1.0,"missRate":0.0,"onlineH":6.73,"served":184,"assignedReplied":184,"bad":1,"missed":0},{"date":"2026-04-05","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.013793,"aht":8.8579,"tph":24.7019,"servingRate":1.0494,"s30s1":1.0,"s30s2":0.9879,"missRate":0.0,"onlineH":5.87,"served":145,"assignedReplied":145,"bad":2,"missed":0},{"date":"2026-04-05","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.0,"aht":9.117,"tph":20.9738,"servingRate":1.0861,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.34,"served":112,"assignedReplied":112,"bad":0,"missed":0},{"date":"2026-04-05","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.025,"aht":8.5523,"tph":21.8579,"servingRate":1.071,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.49,"served":120,"assignedReplied":120,"bad":3,"missed":0},{"date":"2026-04-05","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.0,"aht":11.3998,"tph":17.77,"servingRate":1.1481,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.74,"served":102,"assignedReplied":102,"bad":0,"missed":0},{"date":"2026-04-05","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.0,"aht":10.753,"tph":18.835,"servingRate":1.1165,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.15,"served":97,"assignedReplied":97,"bad":0,"missed":0},{"date":"2026-04-05","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.022388,"aht":9.5959,"tph":21.0692,"servingRate":1.0173,"s30s1":1.0,"s30s2":0.9932,"missRate":0.0074,"onlineH":6.36,"served":134,"assignedReplied":134,"bad":3,"missed":1},{"date":"2026-04-05","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.00641,"aht":7.7974,"tph":23.3184,"servingRate":1.0299,"s30s1":1.0,"s30s2":0.9944,"missRate":0.0,"onlineH":6.69,"served":156,"assignedReplied":156,"bad":1,"missed":0},{"date":"2026-04-05","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.008772,"aht":10.0549,"tph":18.4765,"servingRate":1.0308,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.17,"served":114,"assignedReplied":114,"bad":1,"missed":0},{"date":"2026-04-05","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.031646,"aht":7.9731,"tph":23.9032,"servingRate":1.0303,"s30s1":1.0,"s30s2":0.9944,"missRate":0.0063,"onlineH":6.61,"served":158,"assignedReplied":158,"bad":5,"missed":1},{"date":"2026-04-05","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.017241,"aht":11.095,"tph":17.7914,"servingRate":1.0291,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.52,"served":116,"assignedReplied":116,"bad":2,"missed":0},{"date":"2026-04-05","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.0,"aht":6.9365,"tph":26.8945,"servingRate":1.0178,"s30s1":1.0,"s30s2":0.9952,"missRate":0.0055,"onlineH":6.73,"served":181,"assignedReplied":181,"bad":0,"missed":1},{"date":"2026-04-06","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.00995,"aht":8.8519,"tph":25.7033,"servingRate":1.0332,"s30s1":0.9932,"s30s2":0.9955,"missRate":0.0,"onlineH":7.82,"served":201,"assignedReplied":201,"bad":2,"missed":0},{"date":"2026-04-06","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.008621,"aht":12.3515,"tph":17.7914,"servingRate":1.0844,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.52,"served":116,"assignedReplied":116,"bad":1,"missed":0},{"date":"2026-04-06","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.014599,"aht":9.551,"tph":21.3396,"servingRate":1.0826,"s30s1":1.0,"s30s2":0.9938,"missRate":0.0072,"onlineH":6.42,"served":137,"assignedReplied":137,"bad":2,"missed":1},{"date":"2026-04-06","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.006944,"aht":12.2247,"tph":21.9512,"servingRate":1.0625,"s30s1":0.8,"s30s2":1.0,"missRate":0.0,"onlineH":6.56,"served":144,"assignedReplied":144,"bad":1,"missed":0},{"date":"2026-04-06","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.006452,"aht":11.2697,"tph":23.3083,"servingRate":1.0797,"s30s1":0.8265,"s30s2":1.0,"missRate":0.0,"onlineH":6.65,"served":155,"assignedReplied":155,"bad":1,"missed":0},{"date":"2026-04-06","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.019737,"aht":8.8014,"tph":23.8245,"servingRate":1.069,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.38,"served":152,"assignedReplied":152,"bad":3,"missed":0},{"date":"2026-04-06","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.0,"aht":11.482,"tph":18.5976,"servingRate":1.0701,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.56,"served":122,"assignedReplied":122,"bad":0,"missed":0},{"date":"2026-04-06","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.005319,"aht":8.6231,"tph":30.972,"servingRate":1.0659,"s30s1":0.7851,"s30s2":1.0,"missRate":0.0,"onlineH":6.07,"served":188,"assignedReplied":188,"bad":1,"missed":0},{"date":"2026-04-06","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.012821,"aht":10.519,"tph":26.5758,"servingRate":1.1056,"s30s1":0.8021,"s30s2":0.9942,"missRate":0.0,"onlineH":5.87,"served":156,"assignedReplied":156,"bad":2,"missed":0},{"date":"2026-04-06","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.010417,"aht":8.8532,"tph":29.9532,"servingRate":1.0546,"s30s1":0.8276,"s30s2":1.0,"missRate":0.0,"onlineH":6.41,"served":192,"assignedReplied":192,"bad":2,"missed":0},{"date":"2026-04-06","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.004566,"aht":7.7118,"tph":33.5375,"servingRate":1.0582,"s30s1":0.7357,"s30s2":1.0,"missRate":0.0,"onlineH":6.53,"served":219,"assignedReplied":219,"bad":1,"missed":0},{"date":"2026-04-07","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.0,"aht":9.5649,"tph":20.8122,"servingRate":1.0338,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.91,"served":123,"assignedReplied":123,"bad":0,"missed":0},{"date":"2026-04-07","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.008621,"aht":8.7952,"tph":18.9853,"servingRate":1.0998,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.11,"served":116,"assignedReplied":116,"bad":1,"missed":0},{"date":"2026-04-07","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.007812,"aht":8.2255,"tph":20.5128,"servingRate":1.0994,"s30s1":0.9902,"s30s2":0.9929,"missRate":0.0,"onlineH":6.24,"served":128,"assignedReplied":128,"bad":1,"missed":0},{"date":"2026-04-07","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.014815,"aht":12.7839,"tph":21.7742,"servingRate":1.0613,"s30s1":0.8605,"s30s2":0.9931,"missRate":0.0,"onlineH":6.2,"served":135,"assignedReplied":135,"bad":2,"missed":0},{"date":"2026-04-07","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.006369,"aht":10.6799,"tph":25.4457,"servingRate":1.1102,"s30s1":0.8667,"s30s2":0.9943,"missRate":0.0,"onlineH":6.17,"served":157,"assignedReplied":157,"bad":1,"missed":0},{"date":"2026-04-07","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.023077,"aht":12.7858,"tph":22.1088,"servingRate":1.0918,"s30s1":0.9012,"s30s2":1.0,"missRate":0.0,"onlineH":5.88,"served":130,"assignedReplied":130,"bad":3,"missed":0},{"date":"2026-04-07","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.021978,"aht":11.4143,"tph":16.3082,"servingRate":1.0753,"s30s1":1.0,"s30s2":0.9906,"missRate":0.0109,"onlineH":5.58,"served":91,"assignedReplied":91,"bad":2,"missed":1},{"date":"2026-04-07","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.010811,"aht":8.3976,"tph":32.23,"servingRate":1.1446,"s30s1":0.825,"s30s2":0.995,"missRate":0.0054,"onlineH":5.74,"served":185,"assignedReplied":185,"bad":2,"missed":1},{"date":"2026-04-07","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.006944,"aht":11.5986,"tph":23.8411,"servingRate":1.0629,"s30s1":0.8137,"s30s2":1.0,"missRate":0.0,"onlineH":6.04,"served":144,"assignedReplied":144,"bad":1,"missed":0},{"date":"2026-04-07","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.011494,"aht":8.9157,"tph":31.1828,"servingRate":1.0896,"s30s1":0.7876,"s30s2":0.9946,"missRate":0.0057,"onlineH":5.58,"served":174,"assignedReplied":174,"bad":2,"missed":1},{"date":"2026-04-07","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.017241,"aht":8.752,"tph":19.2691,"servingRate":1.1262,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.02,"served":116,"assignedReplied":116,"bad":2,"missed":0},{"date":"2026-04-08","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.02381,"aht":10.1491,"tph":19.3846,"servingRate":1.1138,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.5,"served":126,"assignedReplied":126,"bad":3,"missed":0},{"date":"2026-04-08","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.015625,"aht":8.7716,"tph":30.5246,"servingRate":1.0509,"s30s1":0.7226,"s30s2":0.9951,"missRate":0.0052,"onlineH":6.29,"served":192,"assignedReplied":192,"bad":3,"missed":1},{"date":"2026-04-08","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.021739,"aht":12.6431,"tph":21.0687,"servingRate":1.0702,"s30s1":0.7228,"s30s2":1.0,"missRate":0.0,"onlineH":6.55,"served":138,"assignedReplied":138,"bad":3,"missed":0},{"date":"2026-04-08","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.0,"aht":10.1657,"tph":19.6748,"servingRate":1.1187,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.15,"served":121,"assignedReplied":121,"bad":0,"missed":0},{"date":"2026-04-08","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.024096,"aht":10.3214,"tph":27.438,"servingRate":1.0694,"s30s1":0.6429,"s30s2":1.0,"missRate":0.0,"onlineH":6.05,"served":166,"assignedReplied":166,"bad":4,"missed":0},{"date":"2026-04-08","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.021898,"aht":8.3201,"tph":24.5081,"servingRate":1.0716,"s30s1":0.9898,"s30s2":1.0,"missRate":0.0,"onlineH":5.59,"served":137,"assignedReplied":137,"bad":3,"missed":0},{"date":"2026-04-08","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.0,"aht":12.1722,"tph":16.0475,"servingRate":1.0401,"s30s1":0.9891,"s30s2":1.0,"missRate":0.0,"onlineH":6.73,"served":108,"assignedReplied":108,"bad":0,"missed":0},{"date":"2026-04-08","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.005988,"aht":7.4388,"tph":25.6923,"servingRate":1.0308,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.5,"served":167,"assignedReplied":167,"bad":1,"missed":0},{"date":"2026-04-08","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.039062,"aht":12.9712,"tph":21.3333,"servingRate":1.08,"s30s1":0.703,"s30s2":0.9929,"missRate":0.0078,"onlineH":6.0,"served":128,"assignedReplied":128,"bad":5,"missed":1},{"date":"2026-04-08","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.00565,"aht":8.5597,"tph":30.7826,"servingRate":1.0626,"s30s1":0.6279,"s30s2":1.0,"missRate":0.0,"onlineH":5.75,"served":177,"assignedReplied":177,"bad":1,"missed":0},{"date":"2026-04-08","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.038298,"aht":7.3906,"tph":36.7188,"servingRate":1.0625,"s30s1":0.7151,"s30s2":1.0,"missRate":0.0,"onlineH":6.4,"served":235,"assignedReplied":235,"bad":9,"missed":0},{"date":"2026-04-09","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.021739,"aht":9.7762,"tph":29.2528,"servingRate":1.1415,"s30s1":0.8828,"s30s2":0.9951,"missRate":0.0,"onlineH":6.29,"served":184,"assignedReplied":184,"bad":4,"missed":0},{"date":"2026-04-09","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.010526,"aht":7.8502,"tph":29.9685,"servingRate":1.0347,"s30s1":0.9124,"s30s2":0.9951,"missRate":0.0,"onlineH":6.34,"served":190,"assignedReplied":190,"bad":2,"missed":0},{"date":"2026-04-09","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.032258,"aht":14.5865,"tph":14.1768,"servingRate":1.0549,"s30s1":1.0,"s30s2":0.9802,"missRate":0.0211,"onlineH":6.56,"served":93,"assignedReplied":93,"bad":3,"missed":2},{"date":"2026-04-09","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.008475,"aht":9.9636,"tph":23.3202,"servingRate":1.1542,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.06,"served":118,"assignedReplied":118,"bad":1,"missed":0},{"date":"2026-04-09","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.014493,"aht":9.7028,"tph":22.3301,"servingRate":1.0761,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.18,"served":138,"assignedReplied":138,"bad":2,"missed":0},{"date":"2026-04-09","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.01875,"aht":9.8512,"tph":24.5023,"servingRate":1.0704,"s30s1":0.9381,"s30s2":1.0,"missRate":0.0,"onlineH":6.53,"served":160,"assignedReplied":160,"bad":3,"missed":0},{"date":"2026-04-09","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.033613,"aht":12.705,"tph":20.3767,"servingRate":1.089,"s30s1":0.8953,"s30s2":1.0,"missRate":0.0,"onlineH":5.84,"served":119,"assignedReplied":119,"bad":4,"missed":0},{"date":"2026-04-09","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.023529,"aht":8.8125,"tph":28.5714,"servingRate":1.0723,"s30s1":0.8966,"s30s2":0.9949,"missRate":0.0058,"onlineH":5.95,"served":170,"assignedReplied":170,"bad":4,"missed":1},{"date":"2026-04-09","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.030075,"aht":9.4893,"tph":22.735,"servingRate":1.0564,"s30s1":1.0,"s30s2":0.9938,"missRate":0.0075,"onlineH":5.85,"served":133,"assignedReplied":133,"bad":4,"missed":1},{"date":"2026-04-09","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.022901,"aht":10.028,"tph":22.3932,"servingRate":1.0718,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.85,"served":131,"assignedReplied":131,"bad":3,"missed":0},{"date":"2026-04-09","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.028986,"aht":8.0301,"tph":27.49,"servingRate":1.1394,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.02,"served":138,"assignedReplied":138,"bad":4,"missed":0},{"date":"2026-04-10","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.0,"aht":9.878,"tph":21.2318,"servingRate":1.0632,"s30s1":0.9884,"s30s2":0.9667,"missRate":0.0,"onlineH":6.17,"served":131,"assignedReplied":131,"bad":0,"missed":0},{"date":"2026-04-10","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.015385,"aht":9.4777,"tph":22.9682,"servingRate":1.0795,"s30s1":0.9886,"s30s2":0.9861,"missRate":0.0,"onlineH":5.66,"served":130,"assignedReplied":130,"bad":2,"missed":0},{"date":"2026-04-10","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.009091,"aht":13.9775,"tph":17.5159,"servingRate":1.1067,"s30s1":0.9697,"s30s2":0.9924,"missRate":0.0,"onlineH":6.28,"served":110,"assignedReplied":110,"bad":1,"missed":0},{"date":"2026-04-10","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.015504,"aht":10.6402,"tph":22.0137,"servingRate":1.1587,"s30s1":1.0,"s30s2":0.9935,"missRate":0.0,"onlineH":5.86,"served":129,"assignedReplied":128,"bad":2,"missed":0},{"date":"2026-04-10","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.008264,"aht":11.6827,"tph":20.0,"servingRate":1.0678,"s30s1":1.0,"s30s2":0.9929,"missRate":0.0082,"onlineH":6.05,"served":121,"assignedReplied":121,"bad":1,"missed":1},{"date":"2026-04-10","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.0,"aht":8.3094,"tph":25.5,"servingRate":1.0717,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.0,"served":153,"assignedReplied":153,"bad":0,"missed":0},{"date":"2026-04-10","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.016129,"aht":10.4653,"tph":20.1626,"servingRate":1.0602,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.15,"served":124,"assignedReplied":124,"bad":2,"missed":0},{"date":"2026-04-10","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.019231,"aht":8.3063,"tph":25.5738,"servingRate":1.0705,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.1,"served":156,"assignedReplied":156,"bad":3,"missed":0},{"date":"2026-04-10","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.006993,"aht":9.7924,"tph":22.2395,"servingRate":1.0311,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.43,"served":143,"assignedReplied":143,"bad":1,"missed":0},{"date":"2026-04-10","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.008621,"aht":12.3624,"tph":19.2053,"servingRate":1.1291,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.04,"served":116,"assignedReplied":116,"bad":1,"missed":0},{"date":"2026-04-10","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.015625,"aht":6.9492,"tph":32.0,"servingRate":1.0483,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.0,"served":192,"assignedReplied":192,"bad":3,"missed":0},{"date":"2026-04-11","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.016667,"aht":8.5318,"tph":18.75,"servingRate":1.0234,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.4,"served":120,"assignedReplied":120,"bad":2,"missed":0},{"date":"2026-04-11","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.017544,"aht":8.951,"tph":17.7847,"servingRate":1.0359,"s30s1":1.0,"s30s2":0.9921,"missRate":0.0,"onlineH":6.41,"served":114,"assignedReplied":114,"bad":2,"missed":0},{"date":"2026-04-11","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.008621,"aht":8.5264,"tph":18.7399,"servingRate":1.0792,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.19,"served":116,"assignedReplied":116,"bad":1,"missed":0},{"date":"2026-04-11","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.018182,"aht":12.8161,"tph":17.0279,"servingRate":1.0573,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.46,"served":110,"assignedReplied":110,"bad":2,"missed":0},{"date":"2026-04-11","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.048,"aht":11.0215,"tph":19.9362,"servingRate":1.1053,"s30s1":0.9865,"s30s2":0.9932,"missRate":0.0,"onlineH":6.27,"served":125,"assignedReplied":124,"bad":6,"missed":0},{"date":"2026-04-11","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.006061,"aht":8.1125,"tph":25.1524,"servingRate":1.0229,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.56,"served":165,"assignedReplied":165,"bad":1,"missed":0},{"date":"2026-04-11","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.0,"aht":11.0298,"tph":15.0943,"servingRate":1.0267,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.36,"served":96,"assignedReplied":96,"bad":0,"missed":0},{"date":"2026-04-11","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.006536,"aht":6.5995,"tph":23.2877,"servingRate":1.0152,"s30s1":0.9897,"s30s2":0.9942,"missRate":0.0,"onlineH":6.57,"served":153,"assignedReplied":152,"bad":1,"missed":0},{"date":"2026-04-11","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.014706,"aht":9.9388,"tph":21.6906,"servingRate":1.0718,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.27,"served":136,"assignedReplied":136,"bad":2,"missed":0},{"date":"2026-04-11","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.0,"aht":10.64,"tph":19.9391,"servingRate":1.003,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.57,"served":131,"assignedReplied":131,"bad":0,"missed":0},{"date":"2026-04-11","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.014388,"aht":9.4972,"tph":22.7124,"servingRate":1.0588,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.12,"served":139,"assignedReplied":139,"bad":2,"missed":0},{"date":"2026-04-12","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.020833,"aht":7.9966,"tph":21.2389,"servingRate":1.028,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.78,"served":144,"assignedReplied":144,"bad":3,"missed":0},{"date":"2026-04-12","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.024194,"aht":8.9961,"tph":19.84,"servingRate":1.12,"s30s1":0.988,"s30s2":0.993,"missRate":0.0,"onlineH":6.25,"served":124,"assignedReplied":123,"bad":3,"missed":0},{"date":"2026-04-12","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.0,"aht":8.3126,"tph":19.8686,"servingRate":1.0115,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.09,"served":121,"assignedReplied":121,"bad":0,"missed":0},{"date":"2026-04-12","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.019231,"aht":11.2032,"tph":16.4038,"servingRate":1.0174,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.34,"served":104,"assignedReplied":104,"bad":2,"missed":0},{"date":"2026-04-12","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.0,"aht":10.2023,"tph":17.4184,"servingRate":1.0715,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.43,"served":112,"assignedReplied":112,"bad":0,"missed":0},{"date":"2026-04-12","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.013514,"aht":7.3984,"tph":22.6646,"servingRate":1.0521,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.53,"served":148,"assignedReplied":148,"bad":2,"missed":0},{"date":"2026-04-12","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.013699,"aht":7.0265,"tph":23.7785,"servingRate":1.0195,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.14,"served":146,"assignedReplied":146,"bad":2,"missed":0},{"date":"2026-04-12","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.015625,"aht":9.338,"tph":19.1617,"servingRate":1.012,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.68,"served":128,"assignedReplied":128,"bad":2,"missed":0},{"date":"2026-04-12","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.009174,"aht":10.4362,"tph":17.4679,"servingRate":1.0849,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.24,"served":109,"assignedReplied":109,"bad":1,"missed":0},{"date":"2026-04-12","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.02439,"aht":8.5109,"tph":20.603,"servingRate":1.0821,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.97,"served":123,"assignedReplied":123,"bad":3,"missed":0},{"date":"2026-04-12","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.024845,"aht":7.1129,"tph":23.7814,"servingRate":0.9926,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.77,"served":161,"assignedReplied":161,"bad":4,"missed":0},{"date":"2026-04-13","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.022222,"aht":8.2227,"tph":27.1493,"servingRate":1.0618,"s30s1":0.8045,"s30s2":0.99,"missRate":0.011,"onlineH":6.63,"served":180,"assignedReplied":180,"bad":4,"missed":2},{"date":"2026-04-13","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.013423,"aht":10.0634,"tph":22.7829,"servingRate":1.0749,"s30s1":0.8627,"s30s2":1.0,"missRate":0.0,"onlineH":6.54,"served":149,"assignedReplied":149,"bad":2,"missed":0},{"date":"2026-04-13","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.0,"aht":8.4788,"tph":21.8597,"servingRate":1.0881,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.13,"served":134,"assignedReplied":134,"bad":0,"missed":0},{"date":"2026-04-13","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.017544,"aht":13.3955,"tph":17.8683,"servingRate":1.0737,"s30s1":0.9481,"s30s2":0.9853,"missRate":0.0,"onlineH":6.38,"served":114,"assignedReplied":114,"bad":2,"missed":0},{"date":"2026-04-13","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.015152,"aht":11.2601,"tph":20.8531,"servingRate":1.0948,"s30s1":0.8941,"s30s2":1.0,"missRate":0.0,"onlineH":6.33,"served":132,"assignedReplied":132,"bad":2,"missed":0},{"date":"2026-04-13","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.0,"aht":9.7591,"tph":19.2496,"servingRate":1.1028,"s30s1":1.0,"s30s2":0.9928,"missRate":0.0084,"onlineH":6.13,"served":118,"assignedReplied":118,"bad":0,"missed":1},{"date":"2026-04-13","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.006944,"aht":8.1292,"tph":23.5294,"servingRate":1.0588,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.12,"served":144,"assignedReplied":144,"bad":1,"missed":0},{"date":"2026-04-13","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.008,"aht":10.8958,"tph":22.0848,"servingRate":1.0883,"s30s1":0.8625,"s30s2":1.0,"missRate":0.0,"onlineH":5.66,"served":125,"assignedReplied":125,"bad":1,"missed":0},{"date":"2026-04-13","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.026178,"aht":7.6085,"tph":29.5666,"servingRate":1.0774,"s30s1":0.8657,"s30s2":1.0,"missRate":0.0,"onlineH":6.46,"served":191,"assignedReplied":191,"bad":5,"missed":0},{"date":"2026-04-13","ulp":"ATLCOLBAQ314","name":"Andrés Ruíz","dsat":0.022222,"aht":8.3278,"tph":7.5885,"servingRate":1.0101,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.93,"served":45,"assignedReplied":45,"bad":1,"missed":0},{"date":"2026-04-13","ulp":"ATLCOLBAQ315","name":"Luisa Castillo","dsat":0.016949,"aht":6.0239,"tph":9.7521,"servingRate":0.9421,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.05,"served":59,"assignedReplied":59,"bad":1,"missed":0},{"date":"2026-04-13","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.032,"aht":8.7072,"tph":22.3614,"servingRate":1.1413,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.59,"served":125,"assignedReplied":125,"bad":4,"missed":0},{"date":"2026-04-13","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.009174,"aht":11.3086,"tph":15.4391,"servingRate":1.0751,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":7.06,"served":109,"assignedReplied":109,"bad":1,"missed":0},{"date":"2026-04-13","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.007353,"aht":8.3753,"tph":21.7949,"servingRate":1.1026,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.24,"served":136,"assignedReplied":136,"bad":1,"missed":0},{"date":"2026-04-13","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.016,"aht":9.104,"tph":21.1149,"servingRate":1.0726,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.92,"served":125,"assignedReplied":125,"bad":2,"missed":0},{"date":"2026-04-14","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.00813,"aht":9.8293,"tph":19.5238,"servingRate":1.0349,"s30s1":0.9886,"s30s2":0.9789,"missRate":0.0081,"onlineH":6.3,"served":123,"assignedReplied":123,"bad":1,"missed":1},{"date":"2026-04-14","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.0,"aht":8.8593,"tph":21.8501,"servingRate":1.0399,"s30s1":0.9889,"s30s2":0.9938,"missRate":0.0,"onlineH":6.27,"served":137,"assignedReplied":136,"bad":0,"missed":0},{"date":"2026-04-14","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.0,"aht":7.6801,"tph":22.1106,"servingRate":1.0704,"s30s1":1.0,"s30s2":0.9931,"missRate":0.0,"onlineH":5.97,"served":132,"assignedReplied":132,"bad":0,"missed":0},{"date":"2026-04-14","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.0,"aht":11.0659,"tph":18.3056,"servingRate":1.056,"s30s1":1.0,"s30s2":0.9926,"missRate":0.0,"onlineH":6.61,"served":121,"assignedReplied":121,"bad":0,"missed":0},{"date":"2026-04-14","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.0,"aht":10.9852,"tph":18.56,"servingRate":1.0976,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.25,"served":116,"assignedReplied":116,"bad":0,"missed":0},{"date":"2026-04-14","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.0,"aht":11.0233,"tph":17.0778,"servingRate":1.0436,"s30s1":0.9821,"s30s2":0.9808,"missRate":0.0,"onlineH":5.27,"served":90,"assignedReplied":90,"bad":0,"missed":0},{"date":"2026-04-14","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.0,"aht":8.1927,"tph":22.975,"servingRate":1.0206,"s30s1":0.9912,"s30s2":0.9944,"missRate":0.0,"onlineH":6.79,"served":156,"assignedReplied":156,"bad":0,"missed":0},{"date":"2026-04-14","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.0,"aht":7.9472,"tph":23.7741,"servingRate":1.0267,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.73,"served":160,"assignedReplied":160,"bad":0,"missed":0},{"date":"2026-04-14","ulp":"ATLCOLBAQ314","name":"Andrés Ruíz","dsat":0.0,"aht":7.2551,"tph":8.2312,"servingRate":0.993,"s30s1":1.0,"s30s2":0.9792,"missRate":0.0,"onlineH":5.71,"served":47,"assignedReplied":47,"bad":0,"missed":0},{"date":"2026-04-14","ulp":"ATLCOLBAQ315","name":"Luisa Castillo","dsat":0.0,"aht":6.3864,"tph":9.6386,"servingRate":0.9966,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.81,"served":56,"assignedReplied":56,"bad":0,"missed":0},{"date":"2026-04-14","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.0,"aht":8.7682,"tph":19.8675,"servingRate":1.0414,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.04,"served":120,"assignedReplied":120,"bad":0,"missed":0},{"date":"2026-04-14","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.0,"aht":10.4711,"tph":16.7816,"servingRate":1.0874,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":4.35,"served":73,"assignedReplied":73,"bad":0,"missed":0},{"date":"2026-04-14","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.0,"aht":9.3831,"tph":22.2857,"servingRate":1.1314,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":3.5,"served":78,"assignedReplied":78,"bad":0,"missed":0},{"date":"2026-04-14","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.008475,"aht":8.8697,"tph":19.6667,"servingRate":1.1017,"s30s1":0.9853,"s30s2":0.9786,"missRate":0.0,"onlineH":6.0,"served":118,"assignedReplied":118,"bad":1,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.0,"aht":10.3144,"tph":20.0,"servingRate":1.1078,"s30s1":1.0,"s30s2":0.9854,"missRate":0.0,"onlineH":5.75,"served":115,"assignedReplied":115,"bad":0,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.0,"aht":8.965,"tph":25.9582,"servingRate":1.0261,"s30s1":0.7879,"s30s2":0.9939,"missRate":0.0,"onlineH":5.74,"served":149,"assignedReplied":149,"bad":0,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.0,"aht":14.3327,"tph":14.3103,"servingRate":1.1069,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.8,"served":83,"assignedReplied":83,"bad":0,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.0,"aht":10.0908,"tph":21.6,"servingRate":1.266,"s30s1":0.9863,"s30s2":0.9913,"missRate":0.0,"onlineH":5.0,"served":108,"assignedReplied":108,"bad":0,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.0,"aht":10.6927,"tph":21.1073,"servingRate":1.064,"s30s1":0.8551,"s30s2":1.0,"missRate":0.0,"onlineH":5.78,"served":122,"assignedReplied":122,"bad":0,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.0,"aht":9.6641,"tph":20.177,"servingRate":1.0796,"s30s1":1.0,"s30s2":0.9926,"missRate":0.0,"onlineH":5.65,"served":114,"assignedReplied":114,"bad":0,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.0,"aht":10.8172,"tph":20.4981,"servingRate":1.1801,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.22,"served":107,"assignedReplied":107,"bad":0,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.007246,"aht":8.0898,"tph":23.5495,"servingRate":1.0512,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.86,"served":138,"assignedReplied":138,"bad":1,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ314","name":"Andrés Ruíz","dsat":0.0,"aht":8.9463,"tph":6.9217,"servingRate":0.9964,"s30s1":0.95,"s30s2":1.0,"missRate":0.0,"onlineH":5.49,"served":38,"assignedReplied":38,"bad":0,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ315","name":"Luisa Castillo","dsat":0.0,"aht":7.7737,"tph":8.1218,"servingRate":1.0068,"s30s1":0.9583,"s30s2":1.0,"missRate":0.0,"onlineH":5.91,"served":48,"assignedReplied":48,"bad":0,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.0,"aht":8.417,"tph":27.2059,"servingRate":1.046,"s30s1":0.8485,"s30s2":1.0,"missRate":0.0,"onlineH":5.44,"served":148,"assignedReplied":148,"bad":0,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.0,"aht":11.6944,"tph":19.6721,"servingRate":1.0601,"s30s1":0.7879,"s30s2":1.0,"missRate":0.0,"onlineH":5.49,"served":108,"assignedReplied":108,"bad":0,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.0,"aht":10.0564,"tph":21.7842,"servingRate":1.0685,"s30s1":0.9655,"s30s2":1.0,"missRate":0.0,"onlineH":4.82,"served":105,"assignedReplied":105,"bad":0,"missed":0},{"date":"2026-04-15","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.0,"aht":7.3455,"tph":25.0373,"servingRate":1.0313,"s30s1":0.9825,"s30s2":0.9893,"missRate":0.0,"onlineH":6.71,"served":168,"assignedReplied":168,"bad":0,"missed":0},{"date":"2026-04-16","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.0,"aht":10.2765,"tph":20.5339,"servingRate":1.1068,"s30s1":0.987,"s30s2":0.9823,"missRate":0.0,"onlineH":4.87,"served":100,"assignedReplied":100,"bad":0,"missed":0},{"date":"2026-04-16","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.0,"aht":8.3732,"tph":24.3816,"servingRate":1.1201,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.66,"served":138,"assignedReplied":138,"bad":0,"missed":0},{"date":"2026-04-16","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.0,"aht":9.9234,"tph":29.6796,"servingRate":1.0641,"s30s1":0.7845,"s30s2":1.0,"missRate":0.0,"onlineH":5.93,"served":176,"assignedReplied":176,"bad":0,"missed":0},{"date":"2026-04-16","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.023529,"aht":12.4796,"tph":18.7225,"servingRate":1.2643,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":4.54,"served":85,"assignedReplied":85,"bad":2,"missed":0},{"date":"2026-04-16","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.0,"aht":11.9098,"tph":24.8731,"servingRate":1.0592,"s30s1":0.6559,"s30s2":1.0,"missRate":0.0,"onlineH":5.91,"served":147,"assignedReplied":147,"bad":0,"missed":0},{"date":"2026-04-16","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.0,"aht":10.4273,"tph":20.5937,"servingRate":1.0668,"s30s1":0.9861,"s30s2":0.9919,"missRate":0.0,"onlineH":5.39,"served":111,"assignedReplied":111,"bad":0,"missed":0},{"date":"2026-04-16","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.0,"aht":8.4945,"tph":23.1392,"servingRate":1.0663,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.18,"served":143,"assignedReplied":143,"bad":0,"missed":0},{"date":"2026-04-16","ulp":"ATLCOLBAQ314","name":"Andrés Ruíz","dsat":0.0,"aht":8.6891,"tph":7.2934,"servingRate":1.0276,"s30s1":0.8214,"s30s2":1.0,"missRate":0.0,"onlineH":6.17,"served":45,"assignedReplied":45,"bad":0,"missed":0},{"date":"2026-04-16","ulp":"ATLCOLBAQ315","name":"Luisa Castillo","dsat":0.0,"aht":6.6211,"tph":8.7603,"servingRate":0.9471,"s30s1":0.7241,"s30s2":1.0,"missRate":0.0,"onlineH":6.05,"served":53,"assignedReplied":53,"bad":0,"missed":0},{"date":"2026-04-16","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.0,"aht":8.6071,"tph":31.9403,"servingRate":1.0164,"s30s1":0.7259,"s30s2":0.9959,"missRate":0.0,"onlineH":6.7,"served":214,"assignedReplied":214,"bad":0,"missed":0},{"date":"2026-04-16","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.0,"aht":13.1355,"tph":21.7868,"servingRate":1.0627,"s30s1":0.7356,"s30s2":1.0,"missRate":0.0,"onlineH":6.38,"served":139,"assignedReplied":139,"bad":0,"missed":0},{"date":"2026-04-16","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.0,"aht":10.9526,"tph":27.2408,"servingRate":1.1019,"s30s1":0.7692,"s30s2":1.0,"missRate":0.0,"onlineH":5.69,"served":155,"assignedReplied":155,"bad":0,"missed":0},{"date":"2026-04-16","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.016529,"aht":8.7555,"tph":24.2,"servingRate":1.064,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.0,"served":121,"assignedReplied":121,"bad":2,"missed":0},{"date":"2026-04-17","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.0,"aht":8.9824,"tph":20.3774,"servingRate":1.0868,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.3,"served":108,"assignedReplied":108,"bad":0,"missed":0},{"date":"2026-04-17","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.0,"aht":8.9407,"tph":30.102,"servingRate":1.0765,"s30s1":0.932,"s30s2":0.9899,"missRate":0.0,"onlineH":5.88,"served":177,"assignedReplied":177,"bad":0,"missed":0},{"date":"2026-04-17","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.0,"aht":13.1164,"tph":15.5797,"servingRate":1.1178,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.52,"served":86,"assignedReplied":86,"bad":0,"missed":0},{"date":"2026-04-17","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.0,"aht":9.7245,"tph":20.6897,"servingRate":1.0884,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":4.64,"served":96,"assignedReplied":96,"bad":0,"missed":0},{"date":"2026-04-17","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.007937,"aht":8.0633,"tph":22.9927,"servingRate":1.0511,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.48,"served":126,"assignedReplied":126,"bad":1,"missed":0},{"date":"2026-04-17","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.009901,"aht":11.5843,"tph":17.4138,"servingRate":1.0966,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.8,"served":101,"assignedReplied":101,"bad":1,"missed":0},{"date":"2026-04-17","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.0,"aht":8.8374,"tph":21.5328,"servingRate":1.0766,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.48,"served":118,"assignedReplied":118,"bad":0,"missed":0},{"date":"2026-04-17","ulp":"ATLCOLBAQ314","name":"Andrés Ruíz","dsat":0.0,"aht":7.2767,"tph":8.5809,"servingRate":0.9604,"s30s1":0.8788,"s30s2":1.0,"missRate":0.0,"onlineH":6.06,"served":52,"assignedReplied":52,"bad":0,"missed":0},{"date":"2026-04-17","ulp":"ATLCOLBAQ315","name":"Luisa Castillo","dsat":0.0,"aht":7.3877,"tph":7.9208,"servingRate":0.9389,"s30s1":0.9091,"s30s2":1.0,"missRate":0.0,"onlineH":6.06,"served":48,"assignedReplied":48,"bad":0,"missed":0},{"date":"2026-04-17","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.0,"aht":9.2459,"tph":29.0064,"servingRate":1.0481,"s30s1":0.9304,"s30s2":1.0,"missRate":0.0,"onlineH":6.24,"served":181,"assignedReplied":181,"bad":0,"missed":0},{"date":"2026-04-17","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.007937,"aht":12.8706,"tph":21.1765,"servingRate":1.084,"s30s1":0.9512,"s30s2":1.0,"missRate":0.0,"onlineH":5.95,"served":126,"assignedReplied":126,"bad":1,"missed":0},{"date":"2026-04-17","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.0,"aht":9.8861,"tph":26.9868,"servingRate":1.0795,"s30s1":0.955,"s30s2":0.9948,"missRate":0.0061,"onlineH":6.04,"served":163,"assignedReplied":163,"bad":0,"missed":1},{"date":"2026-04-17","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.007519,"aht":8.9618,"tph":20.8791,"servingRate":1.0141,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.37,"served":133,"assignedReplied":133,"bad":1,"missed":0},{"date":"2026-04-18","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.0,"aht":10.2046,"tph":20.7002,"servingRate":1.0609,"s30s1":0.963,"s30s2":0.9733,"missRate":0.0,"onlineH":6.57,"served":136,"assignedReplied":136,"bad":0,"missed":0},{"date":"2026-04-18","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.010101,"aht":9.6442,"tph":14.8204,"servingRate":1.0284,"s30s1":0.9844,"s30s2":0.9725,"missRate":0.0198,"onlineH":6.68,"served":99,"assignedReplied":98,"bad":1,"missed":2},{"date":"2026-04-18","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.0,"aht":9.2101,"tph":25.5652,"servingRate":1.1148,"s30s1":0.9897,"s30s2":0.994,"missRate":0.0,"onlineH":5.75,"served":147,"assignedReplied":147,"bad":0,"missed":0},{"date":"2026-04-18","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.0,"aht":10.0174,"tph":14.6965,"servingRate":1.0911,"s30s1":0.9825,"s30s2":0.9806,"missRate":0.0108,"onlineH":6.26,"served":92,"assignedReplied":91,"bad":0,"missed":1},{"date":"2026-04-18","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.0,"aht":10.8072,"tph":21.5334,"servingRate":1.0718,"s30s1":0.9884,"s30s2":0.9935,"missRate":0.0,"onlineH":6.13,"served":132,"assignedReplied":132,"bad":0,"missed":0},{"date":"2026-04-18","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.0,"aht":8.4324,"tph":17.7005,"servingRate":1.0605,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.61,"served":117,"assignedReplied":117,"bad":0,"missed":0},{"date":"2026-04-18","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.0,"aht":9.7528,"tph":14.6341,"servingRate":1.0211,"s30s1":0.9815,"s30s2":0.9898,"missRate":0.0,"onlineH":6.15,"served":90,"assignedReplied":90,"bad":0,"missed":0},{"date":"2026-04-18","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.008,"aht":7.4742,"tph":19.8098,"servingRate":1.0808,"s30s1":0.9651,"s30s2":0.9706,"missRate":0.0079,"onlineH":6.31,"served":125,"assignedReplied":124,"bad":1,"missed":1},{"date":"2026-04-18","ulp":"ATLCOLBAQ314","name":"Andrés Ruíz","dsat":0.0,"aht":8.4552,"tph":6.962,"servingRate":0.9256,"s30s1":1.0,"s30s2":0.9792,"missRate":0.0222,"onlineH":6.32,"served":44,"assignedReplied":44,"bad":0,"missed":1},{"date":"2026-04-18","ulp":"ATLCOLBAQ315","name":"Luisa Castillo","dsat":0.0,"aht":6.7431,"tph":8.5578,"servingRate":0.9144,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.31,"served":54,"assignedReplied":54,"bad":0,"missed":0},{"date":"2026-04-18","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.0,"aht":8.3188,"tph":16.7905,"servingRate":1.0297,"s30s1":1.0,"s30s2":0.9848,"missRate":0.0,"onlineH":6.73,"served":113,"assignedReplied":113,"bad":0,"missed":0},{"date":"2026-04-19","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.0,"aht":8.2098,"tph":18.5801,"servingRate":1.0302,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.62,"served":123,"assignedReplied":123,"bad":0,"missed":0},{"date":"2026-04-19","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.0,"aht":9.3615,"tph":16.1335,"servingRate":1.0904,"s30s1":1.0,"s30s2":0.9928,"missRate":0.0,"onlineH":7.19,"served":116,"assignedReplied":116,"bad":0,"missed":0},{"date":"2026-04-19","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.010638,"aht":11.612,"tph":14.5511,"servingRate":1.1362,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.46,"served":94,"assignedReplied":94,"bad":1,"missed":0},{"date":"2026-04-19","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.0,"aht":9.4188,"tph":13.1034,"servingRate":1.0603,"s30s1":0.9787,"s30s2":0.9884,"missRate":0.0,"onlineH":5.8,"served":76,"assignedReplied":76,"bad":0,"missed":0},{"date":"2026-04-19","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.0,"aht":10.359,"tph":11.8182,"servingRate":1.0121,"s30s1":1.0,"s30s2":0.989,"missRate":0.0127,"onlineH":6.6,"served":78,"assignedReplied":78,"bad":0,"missed":1},{"date":"2026-04-19","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.0,"aht":7.6172,"tph":15.3274,"servingRate":1.003,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.72,"served":103,"assignedReplied":103,"bad":0,"missed":0},{"date":"2026-04-19","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.011111,"aht":11.2968,"tph":14.7541,"servingRate":1.0459,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.1,"served":90,"assignedReplied":90,"bad":1,"missed":0},{"date":"2026-04-19","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.0,"aht":7.0028,"tph":15.1042,"servingRate":1.0312,"s30s1":1.0,"s30s2":0.9841,"missRate":0.0169,"onlineH":3.84,"served":58,"assignedReplied":58,"bad":0,"missed":1},{"date":"2026-04-19","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.0,"aht":9.0131,"tph":13.3913,"servingRate":1.0191,"s30s1":0.9796,"s30s2":0.9885,"missRate":0.0,"onlineH":5.75,"served":77,"assignedReplied":77,"bad":0,"missed":0},{"date":"2026-04-19","ulp":"ATLCOLBAQ60","name":"Dayana Diaz","dsat":0.010638,"aht":8.349,"tph":14.7567,"servingRate":1.0251,"s30s1":1.0,"s30s2":0.9903,"missRate":0.0,"onlineH":6.37,"served":94,"assignedReplied":94,"bad":1,"missed":0},{"date":"2026-04-20","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.0,"aht":9.1284,"tph":20.8882,"servingRate":1.0395,"s30s1":1.0,"s30s2":0.9866,"missRate":0.0,"onlineH":6.08,"served":127,"assignedReplied":127,"bad":0,"missed":0},{"date":"2026-04-20","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.016667,"aht":9.8372,"tph":19.7368,"servingRate":1.0559,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.08,"served":120,"assignedReplied":120,"bad":2,"missed":0},{"date":"2026-04-20","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.012658,"aht":8.206,"tph":27.1945,"servingRate":1.0895,"s30s1":0.9895,"s30s2":0.9942,"missRate":0.0,"onlineH":5.81,"served":158,"assignedReplied":157,"bad":2,"missed":0},{"date":"2026-04-20","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.0,"aht":13.4782,"tph":15.0442,"servingRate":1.1115,"s30s1":1.0,"s30s2":0.99,"missRate":0.0116,"onlineH":5.65,"served":85,"assignedReplied":85,"bad":0,"missed":1},{"date":"2026-04-20","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.0,"aht":11.5603,"tph":18.0451,"servingRate":1.1447,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.32,"served":96,"assignedReplied":96,"bad":0,"missed":0},{"date":"2026-04-20","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.006211,"aht":10.6857,"tph":28.2456,"servingRate":1.1702,"s30s1":0.8936,"s30s2":0.9895,"missRate":0.0062,"onlineH":5.7,"served":161,"assignedReplied":160,"bad":1,"missed":1},{"date":"2026-04-20","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.0,"aht":8.5413,"tph":24.2739,"servingRate":1.056,"s30s1":0.9884,"s30s2":0.9856,"missRate":0.0085,"onlineH":4.82,"served":117,"assignedReplied":116,"bad":0,"missed":1},{"date":"2026-04-20","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.0,"aht":13.9502,"tph":14.8021,"servingRate":1.062,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.81,"served":86,"assignedReplied":86,"bad":0,"missed":0},{"date":"2026-04-20","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.0,"aht":7.7343,"tph":26.9492,"servingRate":1.0831,"s30s1":1.0,"s30s2":0.9944,"missRate":0.0063,"onlineH":5.9,"served":159,"assignedReplied":159,"bad":0,"missed":1},{"date":"2026-04-20","ulp":"ATLCOLBAQ314","name":"Andrés Ruíz","dsat":0.0,"aht":8.074,"tph":12.596,"servingRate":1.023,"s30s1":0.96,"s30s2":1.0,"missRate":0.0,"onlineH":6.51,"served":82,"assignedReplied":82,"bad":0,"missed":0},{"date":"2026-04-20","ulp":"ATLCOLBAQ315","name":"Luisa Castillo","dsat":0.0,"aht":6.9935,"tph":14.8206,"servingRate":1.0281,"s30s1":0.9818,"s30s2":1.0,"missRate":0.0,"onlineH":6.41,"served":95,"assignedReplied":95,"bad":0,"missed":0},{"date":"2026-04-20","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.0,"aht":8.4068,"tph":34.0171,"servingRate":1.1043,"s30s1":0.9185,"s30s2":0.9954,"missRate":0.005,"onlineH":5.85,"served":199,"assignedReplied":199,"bad":0,"missed":1},{"date":"2026-04-20","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.007246,"aht":12.2492,"tph":23.4295,"servingRate":1.1138,"s30s1":0.9615,"s30s2":0.9877,"missRate":0.0072,"onlineH":5.89,"served":138,"assignedReplied":138,"bad":1,"missed":1},{"date":"2026-04-20","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.0,"aht":9.6464,"tph":29.5345,"servingRate":1.077,"s30s1":0.9593,"s30s2":0.9953,"missRate":0.0,"onlineH":6.23,"served":184,"assignedReplied":184,"bad":0,"missed":0},{"date":"2026-04-21","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.0,"aht":9.7116,"tph":19.0405,"servingRate":1.0435,"s30s1":1.0,"s30s2":0.9932,"missRate":0.0078,"onlineH":6.67,"served":127,"assignedReplied":127,"bad":0,"missed":1},{"date":"2026-04-21","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.0,"aht":9.9876,"tph":18.7919,"servingRate":1.0554,"s30s1":0.9873,"s30s2":0.9919,"missRate":0.0,"onlineH":5.96,"served":112,"assignedReplied":112,"bad":0,"missed":0},{"date":"2026-04-21","ulp":"ATLCOLBAQ204","name":"Oner Ebratt","dsat":0.0,"aht":14.3291,"tph":14.7287,"servingRate":1.1256,"s30s1":0.9861,"s30s2":1.0,"missRate":0.0,"onlineH":6.45,"served":95,"assignedReplied":95,"bad":0,"missed":0},{"date":"2026-04-21","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.0,"aht":11.447,"tph":16.6667,"servingRate":1.0778,"s30s1":0.9853,"s30s2":0.9919,"missRate":0.0,"onlineH":6.3,"served":105,"assignedReplied":105,"bad":0,"missed":0},{"date":"2026-04-21","ulp":"ATLCOLBAQ231","name":"Nayelis Rodriguez","dsat":0.009346,"aht":12.949,"tph":19.3841,"servingRate":1.1232,"s30s1":1.0,"s30s2":0.9839,"missRate":0.0093,"onlineH":5.52,"served":107,"assignedReplied":107,"bad":1,"missed":1},{"date":"2026-04-21","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.0,"aht":8.9153,"tph":23.0366,"servingRate":1.0611,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":5.73,"served":132,"assignedReplied":132,"bad":0,"missed":0},{"date":"2026-04-21","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.0,"aht":12.643,"tph":15.942,"servingRate":1.1159,"s30s1":1.0,"s30s2":0.9915,"missRate":0.01,"onlineH":6.21,"served":99,"assignedReplied":99,"bad":0,"missed":1},{"date":"2026-04-21","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.013793,"aht":8.1899,"tph":23.7705,"servingRate":1.0426,"s30s1":1.0,"s30s2":0.9941,"missRate":0.0068,"onlineH":6.1,"served":145,"assignedReplied":145,"bad":2,"missed":1},{"date":"2026-04-21","ulp":"ATLCOLBAQ314","name":"Andrés Ruíz","dsat":0.0,"aht":7.9307,"tph":11.7994,"servingRate":0.9853,"s30s1":0.9444,"s30s2":0.977,"missRate":0.0,"onlineH":6.78,"served":80,"assignedReplied":80,"bad":0,"missed":0},{"date":"2026-04-21","ulp":"ATLCOLBAQ315","name":"Luisa Castillo","dsat":0.0,"aht":6.7661,"tph":15.1917,"servingRate":0.9956,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.78,"served":103,"assignedReplied":103,"bad":0,"missed":0},{"date":"2026-04-21","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.0,"aht":10.485,"tph":23.4862,"servingRate":1.0459,"s30s1":1.0,"s30s2":0.986,"missRate":0.0,"onlineH":5.45,"served":128,"assignedReplied":128,"bad":0,"missed":0},{"date":"2026-04-21","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.0,"aht":13.9914,"tph":20.751,"servingRate":1.0988,"s30s1":0.9851,"s30s2":0.9839,"missRate":0.0094,"onlineH":5.06,"served":105,"assignedReplied":104,"bad":0,"missed":1},{"date":"2026-04-21","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.0,"aht":10.4873,"tph":26.5625,"servingRate":1.099,"s30s1":0.9688,"s30s2":0.9789,"missRate":0.0129,"onlineH":5.76,"served":153,"assignedReplied":153,"bad":0,"missed":2},{"date":"2026-04-22","ulp":"ATLCOLBAQ118","name":"Yaklin Soto","dsat":0.0,"aht":12.0077,"tph":11.6402,"servingRate":1.0212,"s30s1":0.9375,"s30s2":0.963,"missRate":0.0,"onlineH":1.89,"served":22,"assignedReplied":22,"bad":0,"missed":0},{"date":"2026-04-22","ulp":"ATLCOLBAQ136","name":"Genesis Alvarino","dsat":0.0,"aht":10.8288,"tph":11.9048,"servingRate":0.9571,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":2.1,"served":25,"assignedReplied":25,"bad":0,"missed":0},{"date":"2026-04-22","ulp":"ATLCOLBAQ158","name":"Cesar Albino","dsat":0.0,"aht":8.0797,"tph":15.9574,"servingRate":0.9468,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":1.88,"served":30,"assignedReplied":30,"bad":0,"missed":0},{"date":"2026-04-22","ulp":"ATLCOLBAQ205","name":"Juan Aldana","dsat":0.0,"aht":8.7443,"tph":15.7534,"servingRate":1.0753,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":1.46,"served":23,"assignedReplied":23,"bad":0,"missed":0},{"date":"2026-04-22","ulp":"ATLCOLBAQ236","name":"Camilo Tapia","dsat":0.0,"aht":8.9638,"tph":15.5556,"servingRate":1.0667,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":1.35,"served":21,"assignedReplied":21,"bad":0,"missed":0},{"date":"2026-04-22","ulp":"ATLCOLBAQ240","name":"Camilo Salgado","dsat":0.0,"aht":9.9217,"tph":12.8492,"servingRate":0.9385,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":1.79,"served":23,"assignedReplied":23,"bad":0,"missed":0},{"date":"2026-04-22","ulp":"ATLCOLBAQ30","name":"Danna Tobar","dsat":0.038462,"aht":9.8596,"tph":13.9785,"servingRate":0.9355,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":1.86,"served":26,"assignedReplied":26,"bad":1,"missed":0},{"date":"2026-04-22","ulp":"ATLCOLBAQ314","name":"Andrés Ruíz","dsat":0.0,"aht":7.2989,"tph":12.3711,"servingRate":0.9308,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.79,"served":84,"assignedReplied":84,"bad":0,"missed":0},{"date":"2026-04-22","ulp":"ATLCOLBAQ315","name":"Luisa Castillo","dsat":0.0,"aht":6.3387,"tph":14.7059,"servingRate":0.8971,"s30s1":1.0,"s30s2":1.0,"missRate":0.0,"onlineH":6.8,"served":100,"assignedReplied":100,"bad":0,"missed":0},{"date":"2026-04-22","ulp":"ATLCOLBAQ37","name":"Yoladis Cabrera","dsat":0.0,"aht":9.5699,"tph":25.0,"servingRate":1.0306,"s30s1":0.9792,"s30s2":0.9889,"missRate":0.0,"onlineH":6.2,"served":155,"assignedReplied":155,"bad":0,"missed":0},{"date":"2026-04-22","ulp":"ATLCOLBAQ57","name":"Diego Reyes","dsat":0.0,"aht":13.4482,"tph":17.6056,"servingRate":1.0423,"s30s1":1.0,"s30s2":0.9916,"missRate":0.0,"onlineH":5.68,"served":100,"assignedReplied":100,"bad":0,"missed":0},{"date":"2026-04-22","ulp":"ATLCOLBAQ75","name":"Mayerlinne Cerra","dsat":0.0,"aht":8.9031,"tph":26.0671,"servingRate":0.9939,"s30s1":0.9913,"s30s2":0.9853,"missRate":0.0058,"onlineH":6.56,"served":171,"assignedReplied":171,"bad":0,"missed":1}],"iv":[{"d":"2026-03-31","h":11,"s":139,"oh":3.82,"b":2,"eng":1493.82,"s1":29,"n1":60,"miss":0,"t2":153,"n2":0},{"d":"2026-03-31","h":12,"s":134,"oh":4.06,"b":0,"eng":1313.44,"s1":72,"n1":20,"miss":1,"t2":158,"n2":0},{"d":"2026-03-31","h":13,"s":173,"oh":5.58,"b":2,"eng":1494.31,"s1":121,"n1":0,"miss":0,"t2":191,"n2":0},{"d":"2026-03-31","h":14,"s":160,"oh":5.41,"b":3,"eng":1599.58,"s1":99,"n1":6,"miss":0,"t2":191,"n2":1},{"d":"2026-03-31","h":15,"s":101,"oh":4.85,"b":2,"eng":848.4,"s1":62,"n1":0,"miss":0,"t2":113,"n2":0},{"d":"2026-03-31","h":16,"s":90,"oh":6.25,"b":1,"eng":825.35,"s1":65,"n1":0,"miss":0,"t2":100,"n2":1},{"d":"2026-03-31","h":17,"s":97,"oh":5.07,"b":1,"eng":841.25,"s1":61,"n1":0,"miss":0,"t2":112,"n2":0},{"d":"2026-03-31","h":18,"s":119,"oh":5.64,"b":1,"eng":1158.41,"s1":88,"n1":0,"miss":0,"t2":142,"n2":0},{"d":"2026-03-31","h":19,"s":107,"oh":5.97,"b":2,"eng":1052.53,"s1":75,"n1":0,"miss":0,"t2":124,"n2":1},{"d":"2026-03-31","h":20,"s":71,"oh":3.94,"b":1,"eng":685.67,"s1":51,"n1":0,"miss":0,"t2":78,"n2":0},{"d":"2026-03-31","h":21,"s":67,"oh":4.04,"b":0,"eng":635.6,"s1":47,"n1":0,"miss":0,"t2":72,"n2":0},{"d":"2026-03-31","h":22,"s":80,"oh":4.62,"b":0,"eng":721.73,"s1":80,"n1":0,"miss":0,"t2":86,"n2":0},{"d":"2026-04-01","h":10,"s":127,"oh":4.9,"b":4,"eng":1276.71,"s1":74,"n1":0,"miss":0,"t2":142,"n2":0},{"d":"2026-04-01","h":11,"s":136,"oh":4.66,"b":2,"eng":1448.33,"s1":86,"n1":0,"miss":0,"t2":147,"n2":0},{"d":"2026-04-01","h":12,"s":158,"oh":4.8,"b":3,"eng":1448.94,"s1":94,"n1":0,"miss":0,"t2":180,"n2":1},{"d":"2026-04-01","h":13,"s":143,"oh":5.47,"b":3,"eng":1514.67,"s1":99,"n1":1,"miss":0,"t2":163,"n2":1},{"d":"2026-04-01","h":14,"s":113,"oh":4.56,"b":3,"eng":1133.62,"s1":65,"n1":0,"miss":0,"t2":128,"n2":0},{"d":"2026-04-01","h":15,"s":89,"oh":5.45,"b":2,"eng":858.92,"s1":55,"n1":0,"miss":0,"t2":100,"n2":0},{"d":"2026-04-01","h":16,"s":91,"oh":6.8,"b":5,"eng":757.85,"s1":62,"n1":1,"miss":1,"t2":97,"n2":1},{"d":"2026-04-01","h":17,"s":96,"oh":6.18,"b":2,"eng":842.27,"s1":64,"n1":0,"miss":0,"t2":116,"n2":0},{"d":"2026-04-01","h":18,"s":132,"oh":6.0,"b":1,"eng":1237.07,"s1":96,"n1":0,"miss":1,"t2":153,"n2":0},{"d":"2026-04-01","h":19,"s":94,"oh":4.78,"b":1,"eng":873.82,"s1":69,"n1":1,"miss":0,"t2":106,"n2":1},{"d":"2026-04-01","h":20,"s":81,"oh":3.96,"b":1,"eng":701.1,"s1":48,"n1":0,"miss":0,"t2":94,"n2":0},{"d":"2026-04-01","h":21,"s":96,"oh":4.31,"b":2,"eng":769.47,"s1":62,"n1":0,"miss":0,"t2":107,"n2":0},{"d":"2026-04-01","h":22,"s":87,"oh":4.65,"b":3,"eng":726.79,"s1":86,"n1":1,"miss":0,"t2":95,"n2":1},{"d":"2026-04-02","h":10,"s":190,"oh":6.96,"b":2,"eng":1815.79,"s1":113,"n1":0,"miss":0,"t2":215,"n2":0},{"d":"2026-04-02","h":11,"s":167,"oh":5.86,"b":3,"eng":1478.97,"s1":113,"n1":0,"miss":1,"t2":187,"n2":0},{"d":"2026-04-02","h":12,"s":162,"oh":4.77,"b":3,"eng":1534.94,"s1":83,"n1":20,"miss":0,"t2":169,"n2":1},{"d":"2026-04-02","h":13,"s":193,"oh":6.95,"b":6,"eng":1720.01,"s1":127,"n1":0,"miss":0,"t2":208,"n2":1},{"d":"2026-04-02","h":14,"s":198,"oh":6.79,"b":4,"eng":1899.38,"s1":84,"n1":57,"miss":0,"t2":223,"n2":0},{"d":"2026-04-02","h":15,"s":101,"oh":5.55,"b":5,"eng":908.33,"s1":73,"n1":0,"miss":0,"t2":116,"n2":0},{"d":"2026-04-02","h":16,"s":110,"oh":9.06,"b":1,"eng":1077.82,"s1":74,"n1":0,"miss":0,"t2":129,"n2":0},{"d":"2026-04-02","h":17,"s":76,"oh":4.45,"b":1,"eng":685.22,"s1":48,"n1":0,"miss":0,"t2":81,"n2":0},{"d":"2026-04-02","h":18,"s":171,"oh":4.99,"b":2,"eng":1713.44,"s1":72,"n1":46,"miss":0,"t2":188,"n2":0},{"d":"2026-04-02","h":19,"s":83,"oh":4.54,"b":2,"eng":817.2,"s1":51,"n1":3,"miss":0,"t2":89,"n2":2},{"d":"2026-04-02","h":20,"s":70,"oh":4.0,"b":0,"eng":715.61,"s1":52,"n1":0,"miss":0,"t2":87,"n2":0},{"d":"2026-04-02","h":21,"s":87,"oh":4.45,"b":1,"eng":674.48,"s1":63,"n1":0,"miss":0,"t2":90,"n2":0},{"d":"2026-04-02","h":22,"s":103,"oh":4.69,"b":1,"eng":706.62,"s1":103,"n1":0,"miss":0,"t2":110,"n2":0},{"d":"2026-04-02","h":23,"s":1,"oh":0.0,"b":0,"eng":4.73,"s1":0,"n1":0,"miss":0,"t2":1,"n2":0},{"d":"2026-04-03","h":10,"s":121,"oh":5.94,"b":1,"eng":1078.12,"s1":59,"n1":0,"miss":0,"t2":134,"n2":0},{"d":"2026-04-03","h":11,"s":122,"oh":5.63,"b":1,"eng":947.56,"s1":80,"n1":0,"miss":0,"t2":133,"n2":0},{"d":"2026-04-03","h":12,"s":117,"oh":4.69,"b":5,"eng":1097.9,"s1":75,"n1":0,"miss":1,"t2":126,"n2":1},{"d":"2026-04-03","h":13,"s":121,"oh":4.61,"b":3,"eng":1248.02,"s1":81,"n1":0,"miss":0,"t2":141,"n2":0},{"d":"2026-04-03","h":14,"s":98,"oh":5.63,"b":2,"eng":922.61,"s1":70,"n1":0,"miss":0,"t2":110,"n2":0},{"d":"2026-04-03","h":15,"s":66,"oh":4.48,"b":1,"eng":607.88,"s1":46,"n1":0,"miss":0,"t2":71,"n2":0},{"d":"2026-04-03","h":16,"s":57,"oh":4.73,"b":1,"eng":536.68,"s1":34,"n1":0,"miss":0,"t2":66,"n2":0},{"d":"2026-04-03","h":17,"s":67,"oh":5.74,"b":0,"eng":507.83,"s1":46,"n1":0,"miss":0,"t2":70,"n2":0},{"d":"2026-04-03","h":18,"s":102,"oh":4.7,"b":2,"eng":1015.56,"s1":70,"n1":0,"miss":0,"t2":113,"n2":1},{"d":"2026-04-03","h":19,"s":75,"oh":4.14,"b":1,"eng":631.92,"s1":53,"n1":0,"miss":0,"t2":81,"n2":1},{"d":"2026-04-03","h":20,"s":72,"oh":4.32,"b":0,"eng":592.11,"s1":46,"n1":0,"miss":0,"t2":82,"n2":0},{"d":"2026-04-03","h":21,"s":50,"oh":3.41,"b":0,"eng":467.52,"s1":37,"n1":0,"miss":0,"t2":53,"n2":0},{"d":"2026-04-03","h":22,"s":75,"oh":4.41,"b":2,"eng":565.36,"s1":75,"n1":0,"miss":0,"t2":79,"n2":0},{"d":"2026-04-04","h":10,"s":132,"oh":5.89,"b":0,"eng":1414.7,"s1":78,"n1":0,"miss":0,"t2":150,"n2":0},{"d":"2026-04-04","h":11,"s":135,"oh":5.6,"b":0,"eng":1106.74,"s1":77,"n1":0,"miss":0,"t2":150,"n2":0},{"d":"2026-04-04","h":12,"s":151,"oh":4.24,"b":3,"eng":1310.41,"s1":91,"n1":5,"miss":0,"t2":164,"n2":0},{"d":"2026-04-04","h":13,"s":146,"oh":5.74,"b":2,"eng":1494.56,"s1":90,"n1":16,"miss":0,"t2":165,"n2":0},{"d":"2026-04-04","h":14,"s":163,"oh":5.61,"b":3,"eng":1453.36,"s1":110,"n1":1,"miss":0,"t2":184,"n2":1},{"d":"2026-04-04","h":15,"s":97,"oh":6.1,"b":1,"eng":857.02,"s1":72,"n1":0,"miss":0,"t2":111,"n2":1},{"d":"2026-04-04","h":16,"s":94,"oh":7.35,"b":1,"eng":778.98,"s1":68,"n1":1,"miss":0,"t2":101,"n2":1},{"d":"2026-04-04","h":17,"s":94,"oh":8.04,"b":1,"eng":801.28,"s1":59,"n1":0,"miss":0,"t2":106,"n2":0},{"d":"2026-04-04","h":18,"s":104,"oh":5.0,"b":3,"eng":1052.37,"s1":69,"n1":0,"miss":0,"t2":119,"n2":0},{"d":"2026-04-04","h":19,"s":102,"oh":4.41,"b":0,"eng":1022.9,"s1":72,"n1":0,"miss":0,"t2":119,"n2":2},{"d":"2026-04-04","h":20,"s":73,"oh":4.28,"b":1,"eng":789.27,"s1":46,"n1":0,"miss":0,"t2":87,"n2":0},{"d":"2026-04-04","h":21,"s":52,"oh":4.11,"b":1,"eng":429.72,"s1":38,"n1":0,"miss":0,"t2":57,"n2":0},{"d":"2026-04-04","h":22,"s":80,"oh":5.0,"b":1,"eng":670.25,"s1":80,"n1":0,"miss":0,"t2":89,"n2":0},{"d":"2026-04-05","h":10,"s":109,"oh":4.93,"b":2,"eng":1025.99,"s1":56,"n1":0,"miss":0,"t2":119,"n2":0},{"d":"2026-04-05","h":11,"s":85,"oh":4.1,"b":1,"eng":815.1,"s1":50,"n1":0,"miss":0,"t2":97,"n2":0},{"d":"2026-04-05","h":12,"s":121,"oh":3.95,"b":0,"eng":1074.16,"s1":85,"n1":0,"miss":0,"t2":130,"n2":0},{"d":"2026-04-05","h":13,"s":120,"oh":4.58,"b":3,"eng":1195.62,"s1":73,"n1":0,"miss":0,"t2":136,"n2":0},{"d":"2026-04-05","h":14,"s":103,"oh":3.8,"b":2,"eng":821.45,"s1":60,"n1":0,"miss":3,"t2":120,"n2":0},{"d":"2026-04-05","h":15,"s":103,"oh":4.75,"b":1,"eng":790.89,"s1":75,"n1":0,"miss":0,"t2":113,"n2":0},{"d":"2026-04-05","h":16,"s":97,"oh":6.78,"b":1,"eng":848.11,"s1":69,"n1":0,"miss":0,"t2":112,"n2":0},{"d":"2026-04-05","h":17,"s":93,"oh":6.54,"b":1,"eng":832.07,"s1":61,"n1":0,"miss":0,"t2":103,"n2":0},{"d":"2026-04-05","h":18,"s":118,"oh":6.0,"b":3,"eng":1076.76,"s1":85,"n1":0,"miss":0,"t2":137,"n2":2},{"d":"2026-04-05","h":19,"s":112,"oh":5.45,"b":1,"eng":1073.97,"s1":74,"n1":0,"miss":0,"t2":120,"n2":1},{"d":"2026-04-05","h":20,"s":119,"oh":4.88,"b":0,"eng":1085.95,"s1":84,"n1":0,"miss":0,"t2":132,"n2":0},{"d":"2026-04-05","h":21,"s":111,"oh":5.17,"b":2,"eng":1130.35,"s1":82,"n1":0,"miss":0,"t2":133,"n2":0},{"d":"2026-04-05","h":22,"s":144,"oh":5.74,"b":0,"eng":1217.94,"s1":144,"n1":0,"miss":0,"t2":157,"n2":0},{"d":"2026-04-06","h":10,"s":161,"oh":5.83,"b":1,"eng":1471.88,"s1":101,"n1":0,"miss":0,"t2":179,"n2":0},{"d":"2026-04-06","h":11,"s":169,"oh":5.68,"b":2,"eng":1778.07,"s1":94,"n1":0,"miss":0,"t2":193,"n2":0},{"d":"2026-04-06","h":12,"s":165,"oh":5.32,"b":2,"eng":1724.15,"s1":90,"n1":5,"miss":0,"t2":195,"n2":0},{"d":"2026-04-06","h":13,"s":173,"oh":5.05,"b":2,"eng":1696.31,"s1":84,"n1":36,"miss":0,"t2":190,"n2":0},{"d":"2026-04-06","h":14,"s":182,"oh":5.18,"b":1,"eng":1806.8,"s1":26,"n1":96,"miss":0,"t2":193,"n2":1},{"d":"2026-04-06","h":15,"s":109,"oh":5.54,"b":3,"eng":1087.88,"s1":71,"n1":0,"miss":0,"t2":128,"n2":0},{"d":"2026-04-06","h":16,"s":127,"oh":9.02,"b":1,"eng":1115.81,"s1":71,"n1":0,"miss":0,"t2":145,"n2":0},{"d":"2026-04-06","h":17,"s":157,"oh":6.53,"b":0,"eng":1391.64,"s1":105,"n1":0,"miss":0,"t2":180,"n2":0},{"d":"2026-04-06","h":18,"s":125,"oh":5.0,"b":1,"eng":1460.58,"s1":85,"n1":1,"miss":1,"t2":151,"n2":1},{"d":"2026-04-06","h":19,"s":107,"oh":4.43,"b":3,"eng":1024.91,"s1":72,"n1":0,"miss":0,"t2":129,"n2":0},{"d":"2026-04-06","h":20,"s":91,"oh":3.95,"b":0,"eng":916.26,"s1":63,"n1":0,"miss":0,"t2":107,"n2":0},{"d":"2026-04-06","h":21,"s":114,"oh":5.33,"b":0,"eng":1071.18,"s1":73,"n1":0,"miss":0,"t2":127,"n2":0},{"d":"2026-04-06","h":22,"s":102,"oh":4.93,"b":0,"eng":871.6,"s1":102,"n1":0,"miss":0,"t2":110,"n2":0},{"d":"2026-04-07","h":10,"s":157,"oh":5.79,"b":1,"eng":1713.58,"s1":102,"n1":0,"miss":1,"t2":185,"n2":0},{"d":"2026-04-07","h":11,"s":147,"oh":5.5,"b":3,"eng":1844.19,"s1":91,"n1":2,"miss":1,"t2":171,"n2":1},{"d":"2026-04-07","h":12,"s":143,"oh":4.98,"b":0,"eng":1596.56,"s1":88,"n1":0,"miss":0,"t2":167,"n2":0},{"d":"2026-04-07","h":13,"s":159,"oh":4.98,"b":2,"eng":1673.24,"s1":88,"n1":20,"miss":0,"t2":168,"n2":0},{"d":"2026-04-07","h":14,"s":173,"oh":5.47,"b":2,"eng":1589.91,"s1":38,"n1":76,"miss":0,"t2":177,"n2":0},{"d":"2026-04-07","h":15,"s":84,"oh":4.77,"b":1,"eng":719.09,"s1":61,"n1":0,"miss":0,"t2":89,"n2":0},{"d":"2026-04-07","h":16,"s":64,"oh":4.94,"b":1,"eng":676.31,"s1":49,"n1":0,"miss":0,"t2":72,"n2":0},{"d":"2026-04-07","h":17,"s":115,"oh":6.37,"b":1,"eng":1217.54,"s1":72,"n1":0,"miss":0,"t2":125,"n2":1},{"d":"2026-04-07","h":18,"s":85,"oh":4.99,"b":0,"eng":817.02,"s1":64,"n1":0,"miss":0,"t2":102,"n2":0},{"d":"2026-04-07","h":19,"s":111,"oh":4.6,"b":1,"eng":1027.02,"s1":83,"n1":1,"miss":0,"t2":125,"n2":1},{"d":"2026-04-07","h":20,"s":82,"oh":4.0,"b":2,"eng":807.22,"s1":63,"n1":0,"miss":0,"t2":93,"n2":0},{"d":"2026-04-07","h":21,"s":85,"oh":4.08,"b":1,"eng":733.88,"s1":69,"n1":0,"miss":1,"t2":99,"n2":0},{"d":"2026-04-07","h":22,"s":94,"oh":5.0,"b":2,"eng":727.77,"s1":94,"n1":0,"miss":0,"t2":100,"n2":0},{"d":"2026-04-08","h":10,"s":165,"oh":5.13,"b":5,"eng":1952.48,"s1":53,"n1":58,"miss":0,"t2":182,"n2":0},{"d":"2026-04-08","h":11,"s":164,"oh":5.71,"b":7,"eng":1667.41,"s1":110,"n1":12,"miss":0,"t2":192,"n2":0},{"d":"2026-04-08","h":12,"s":159,"oh":5.08,"b":2,"eng":1512.98,"s1":119,"n1":0,"miss":1,"t2":182,"n2":0},{"d":"2026-04-08","h":13,"s":191,"oh":5.01,"b":4,"eng":1862.7,"s1":29,"n1":104,"miss":0,"t2":199,"n2":0},{"d":"2026-04-08","h":14,"s":172,"oh":5.44,"b":5,"eng":1567.99,"s1":64,"n1":64,"miss":1,"t2":181,"n2":0},{"d":"2026-04-08","h":15,"s":98,"oh":5.68,"b":2,"eng":916.52,"s1":77,"n1":0,"miss":0,"t2":112,"n2":0},{"d":"2026-04-08","h":16,"s":110,"oh":7.67,"b":2,"eng":937.14,"s1":85,"n1":0,"miss":0,"t2":121,"n2":0},{"d":"2026-04-08","h":17,"s":123,"oh":6.19,"b":1,"eng":1022.4,"s1":98,"n1":0,"miss":0,"t2":134,"n2":0},{"d":"2026-04-08","h":18,"s":127,"oh":4.49,"b":0,"eng":1314.44,"s1":94,"n1":2,"miss":0,"t2":150,"n2":0},{"d":"2026-04-08","h":19,"s":110,"oh":4.95,"b":1,"eng":1002.24,"s1":77,"n1":0,"miss":0,"t2":121,"n2":0},{"d":"2026-04-08","h":20,"s":101,"oh":4.21,"b":1,"eng":896.42,"s1":78,"n1":0,"miss":0,"t2":119,"n2":0},{"d":"2026-04-08","h":21,"s":87,"oh":4.37,"b":2,"eng":870.34,"s1":69,"n1":0,"miss":0,"t2":98,"n2":0},{"d":"2026-04-08","h":22,"s":88,"oh":4.58,"b":0,"eng":736.92,"s1":88,"n1":0,"miss":0,"t2":96,"n2":0},{"d":"2026-04-09","h":10,"s":137,"oh":5.63,"b":3,"eng":1363.42,"s1":88,"n1":0,"miss":2,"t2":159,"n2":0},{"d":"2026-04-09","h":11,"s":116,"oh":5.48,"b":3,"eng":1189.98,"s1":76,"n1":0,"miss":0,"t2":133,"n2":0},{"d":"2026-04-09","h":12,"s":138,"oh":4.91,"b":3,"eng":1334.15,"s1":71,"n1":0,"miss":0,"t2":153,"n2":0},{"d":"2026-04-09","h":13,"s":105,"oh":4.8,"b":3,"eng":1156.26,"s1":80,"n1":0,"miss":0,"t2":128,"n2":0},{"d":"2026-04-09","h":14,"s":156,"oh":5.38,"b":2,"eng":1477.3,"s1":105,"n1":0,"miss":0,"t2":173,"n2":0},{"d":"2026-04-09","h":15,"s":89,"oh":4.11,"b":0,"eng":732.84,"s1":61,"n1":0,"miss":0,"t2":100,"n2":0},{"d":"2026-04-09","h":16,"s":80,"oh":5.67,"b":4,"eng":780.18,"s1":60,"n1":0,"miss":1,"t2":91,"n2":0},{"d":"2026-04-09","h":17,"s":97,"oh":6.51,"b":1,"eng":887.36,"s1":69,"n1":0,"miss":0,"t2":111,"n2":0},{"d":"2026-04-09","h":18,"s":161,"oh":5.0,"b":4,"eng":1688.77,"s1":61,"n1":42,"miss":0,"t2":175,"n2":0},{"d":"2026-04-09","h":19,"s":155,"oh":5.0,"b":1,"eng":1596.09,"s1":86,"n1":13,"miss":0,"t2":178,"n2":0},{"d":"2026-04-09","h":20,"s":117,"oh":4.43,"b":2,"eng":1158.08,"s1":72,"n1":0,"miss":1,"t2":129,"n2":2},{"d":"2026-04-09","h":21,"s":98,"oh":4.04,"b":7,"eng":943.37,"s1":63,"n1":0,"miss":0,"t2":115,"n2":0},{"d":"2026-04-09","h":22,"s":125,"oh":4.51,"b":1,"eng":1123.9,"s1":125,"n1":0,"miss":0,"t2":136,"n2":0},{"d":"2026-04-10","h":10,"s":148,"oh":5.82,"b":1,"eng":1684.61,"s1":94,"n1":0,"miss":0,"t2":179,"n2":0},{"d":"2026-04-10","h":11,"s":135,"oh":5.47,"b":3,"eng":1409.96,"s1":82,"n1":0,"miss":0,"t2":155,"n2":0},{"d":"2026-04-10","h":12,"s":125,"oh":4.64,"b":1,"eng":1409.3,"s1":84,"n1":0,"miss":0,"t2":145,"n2":0},{"d":"2026-04-10","h":13,"s":107,"oh":4.69,"b":1,"eng":1176.17,"s1":79,"n1":0,"miss":0,"t2":127,"n2":0},{"d":"2026-04-10","h":14,"s":130,"oh":5.46,"b":2,"eng":1270.64,"s1":84,"n1":0,"miss":1,"t2":144,"n2":0},{"d":"2026-04-10","h":15,"s":73,"oh":4.21,"b":1,"eng":766.66,"s1":42,"n1":1,"miss":0,"t2":84,"n2":2},{"d":"2026-04-10","h":16,"s":89,"oh":6.73,"b":1,"eng":773.95,"s1":54,"n1":0,"miss":0,"t2":101,"n2":0},{"d":"2026-04-10","h":17,"s":117,"oh":7.05,"b":0,"eng":964.64,"s1":81,"n1":2,"miss":0,"t2":122,"n2":3},{"d":"2026-04-10","h":18,"s":139,"oh":5.0,"b":2,"eng":1361.45,"s1":85,"n1":0,"miss":0,"t2":171,"n2":1},{"d":"2026-04-10","h":19,"s":107,"oh":4.19,"b":0,"eng":1021.49,"s1":65,"n1":0,"miss":0,"t2":112,"n2":0},{"d":"2026-04-10","h":20,"s":110,"oh":4.06,"b":1,"eng":1033.09,"s1":65,"n1":0,"miss":0,"t2":127,"n2":1},{"d":"2026-04-10","h":21,"s":111,"oh":4.42,"b":1,"eng":1028.52,"s1":68,"n1":1,"miss":0,"t2":127,"n2":1},{"d":"2026-04-10","h":22,"s":114,"oh":5.0,"b":2,"eng":982.79,"s1":114,"n1":0,"miss":0,"t2":124,"n2":1},{"d":"2026-04-11","h":10,"s":124,"oh":5.43,"b":3,"eng":1376.64,"s1":75,"n1":0,"miss":0,"t2":148,"n2":0},{"d":"2026-04-11","h":11,"s":131,"oh":5.53,"b":5,"eng":1454.48,"s1":76,"n1":0,"miss":0,"t2":152,"n2":0},{"d":"2026-04-11","h":12,"s":119,"oh":5.02,"b":1,"eng":1256.89,"s1":84,"n1":0,"miss":0,"t2":136,"n2":0},{"d":"2026-04-11","h":13,"s":125,"oh":4.78,"b":1,"eng":1296.73,"s1":87,"n1":0,"miss":0,"t2":148,"n2":0},{"d":"2026-04-11","h":14,"s":149,"oh":5.91,"b":2,"eng":1593.44,"s1":90,"n1":0,"miss":0,"t2":175,"n2":1},{"d":"2026-04-11","h":15,"s":103,"oh":5.72,"b":2,"eng":895.82,"s1":58,"n1":1,"miss":0,"t2":113,"n2":1},{"d":"2026-04-11","h":16,"s":99,"oh":8.12,"b":2,"eng":810.94,"s1":59,"n1":1,"miss":0,"t2":110,"n2":1},{"d":"2026-04-11","h":17,"s":115,"oh":6.93,"b":0,"eng":912.54,"s1":65,"n1":0,"miss":0,"t2":126,"n2":0},{"d":"2026-04-11","h":18,"s":110,"oh":5.0,"b":0,"eng":987.22,"s1":71,"n1":0,"miss":0,"t2":127,"n2":0},{"d":"2026-04-11","h":19,"s":95,"oh":4.88,"b":1,"eng":859.89,"s1":59,"n1":0,"miss":0,"t2":112,"n2":0},{"d":"2026-04-11","h":20,"s":84,"oh":4.08,"b":0,"eng":669.08,"s1":52,"n1":0,"miss":0,"t2":89,"n2":0},{"d":"2026-04-11","h":21,"s":62,"oh":4.02,"b":1,"eng":549.43,"s1":41,"n1":0,"miss":0,"t2":72,"n2":0},{"d":"2026-04-11","h":22,"s":89,"oh":4.76,"b":1,"eng":630.44,"s1":89,"n1":0,"miss":0,"t2":94,"n2":0},{"d":"2026-04-12","h":10,"s":127,"oh":5.87,"b":2,"eng":1244.77,"s1":80,"n1":0,"miss":0,"t2":147,"n2":0},{"d":"2026-04-12","h":11,"s":100,"oh":5.44,"b":2,"eng":907.75,"s1":70,"n1":0,"miss":0,"t2":109,"n2":0},{"d":"2026-04-12","h":12,"s":127,"oh":4.39,"b":2,"eng":1247.51,"s1":81,"n1":0,"miss":0,"t2":149,"n2":0},{"d":"2026-04-12","h":13,"s":128,"oh":5.35,"b":2,"eng":1148.07,"s1":74,"n1":0,"miss":0,"t2":147,"n2":0},{"d":"2026-04-12","h":14,"s":106,"oh":5.57,"b":1,"eng":985.71,"s1":61,"n1":0,"miss":0,"t2":118,"n2":0},{"d":"2026-04-12","h":15,"s":100,"oh":4.72,"b":3,"eng":797.6,"s1":58,"n1":0,"miss":0,"t2":116,"n2":0},{"d":"2026-04-12","h":16,"s":111,"oh":8.72,"b":3,"eng":852.28,"s1":61,"n1":0,"miss":0,"t2":124,"n2":0},{"d":"2026-04-12","h":17,"s":97,"oh":7.01,"b":1,"eng":912.47,"s1":52,"n1":0,"miss":0,"t2":108,"n2":0},{"d":"2026-04-12","h":18,"s":121,"oh":5.22,"b":1,"eng":1077.55,"s1":73,"n1":0,"miss":0,"t2":141,"n2":0},{"d":"2026-04-12","h":19,"s":110,"oh":4.62,"b":3,"eng":902.45,"s1":69,"n1":0,"miss":0,"t2":125,"n2":0},{"d":"2026-04-12","h":20,"s":97,"oh":4.15,"b":1,"eng":702.13,"s1":59,"n1":1,"miss":0,"t2":109,"n2":1},{"d":"2026-04-12","h":21,"s":85,"oh":4.16,"b":0,"eng":713.4,"s1":56,"n1":0,"miss":0,"t2":99,"n2":0},{"d":"2026-04-12","h":22,"s":111,"oh":5.0,"b":1,"eng":734.62,"s1":111,"n1":0,"miss":0,"t2":117,"n2":0},{"d":"2026-04-13","h":10,"s":162,"oh":7.27,"b":4,"eng":1598.5,"s1":106,"n1":0,"miss":0,"t2":189,"n2":0},{"d":"2026-04-13","h":11,"s":148,"oh":7.45,"b":0,"eng":1318.3,"s1":92,"n1":0,"miss":0,"t2":175,"n2":0},{"d":"2026-04-13","h":12,"s":153,"oh":7.24,"b":2,"eng":1403.62,"s1":99,"n1":0,"miss":0,"t2":174,"n2":0},{"d":"2026-04-13","h":13,"s":145,"oh":7.34,"b":0,"eng":1285.63,"s1":89,"n1":0,"miss":0,"t2":170,"n2":0},{"d":"2026-04-13","h":14,"s":129,"oh":5.97,"b":1,"eng":1142.36,"s1":82,"n1":0,"miss":0,"t2":149,"n2":0},{"d":"2026-04-13","h":15,"s":148,"oh":9.14,"b":4,"eng":1381.81,"s1":89,"n1":0,"miss":0,"t2":171,"n2":0},{"d":"2026-04-13","h":16,"s":147,"oh":12.96,"b":3,"eng":1227.91,"s1":91,"n1":0,"miss":0,"t2":167,"n2":0},{"d":"2026-04-13","h":17,"s":142,"oh":9.12,"b":0,"eng":1063.21,"s1":84,"n1":0,"miss":1,"t2":152,"n2":0},{"d":"2026-04-13","h":18,"s":211,"oh":5.95,"b":4,"eng":2234.32,"s1":49,"n1":77,"miss":0,"t2":225,"n2":1},{"d":"2026-04-13","h":19,"s":124,"oh":5.07,"b":1,"eng":1311.55,"s1":79,"n1":5,"miss":0,"t2":156,"n2":1},{"d":"2026-04-13","h":20,"s":109,"oh":5.04,"b":6,"eng":1178.42,"s1":71,"n1":0,"miss":1,"t2":125,"n2":0},{"d":"2026-04-13","h":21,"s":111,"oh":4.74,"b":2,"eng":1143.73,"s1":70,"n1":0,"miss":0,"t2":123,"n2":0},{"d":"2026-04-13","h":22,"s":157,"oh":5.88,"b":0,"eng":1305.38,"s1":157,"n1":0,"miss":1,"t2":164,"n2":0},{"d":"2026-04-14","h":10,"s":145,"oh":7.54,"b":0,"eng":1432.58,"s1":81,"n1":1,"miss":0,"t2":170,"n2":3},{"d":"2026-04-14","h":11,"s":114,"oh":5.47,"b":0,"eng":1096.1,"s1":67,"n1":0,"miss":0,"t2":132,"n2":0},{"d":"2026-04-14","h":12,"s":115,"oh":6.61,"b":0,"eng":1057.17,"s1":77,"n1":0,"miss":0,"t2":130,"n2":1},{"d":"2026-04-14","h":13,"s":105,"oh":6.36,"b":1,"eng":805.48,"s1":68,"n1":1,"miss":0,"t2":112,"n2":2},{"d":"2026-04-14","h":14,"s":79,"oh":4.2,"b":0,"eng":708.31,"s1":42,"n1":0,"miss":0,"t2":86,"n2":0},{"d":"2026-04-14","h":15,"s":135,"oh":8.73,"b":0,"eng":1201.34,"s1":78,"n1":0,"miss":0,"t2":163,"n2":2},{"d":"2026-04-14","h":16,"s":86,"oh":8.99,"b":0,"eng":690.15,"s1":53,"n1":0,"miss":0,"t2":98,"n2":0},{"d":"2026-04-14","h":17,"s":106,"oh":6.17,"b":1,"eng":834.14,"s1":64,"n1":0,"miss":0,"t2":115,"n2":0},{"d":"2026-04-14","h":18,"s":163,"oh":5.88,"b":0,"eng":1574.98,"s1":96,"n1":0,"miss":1,"t2":189,"n2":0},{"d":"2026-04-14","h":19,"s":134,"oh":5.48,"b":0,"eng":1386.06,"s1":90,"n1":1,"miss":0,"t2":159,"n2":1},{"d":"2026-04-14","h":20,"s":112,"oh":5.18,"b":0,"eng":992.94,"s1":75,"n1":0,"miss":0,"t2":126,"n2":0},{"d":"2026-04-14","h":21,"s":102,"oh":5.36,"b":0,"eng":1007.63,"s1":61,"n1":0,"miss":0,"t2":115,"n2":1},{"d":"2026-04-14","h":22,"s":131,"oh":5.63,"b":0,"eng":1098.29,"s1":129,"n1":2,"miss":0,"t2":138,"n2":2},{"d":"2026-04-15","h":10,"s":144,"oh":5.02,"b":0,"eng":1420.89,"s1":64,"n1":30,"miss":0,"t2":159,"n2":0},{"d":"2026-04-15","h":11,"s":149,"oh":4.86,"b":0,"eng":1523.18,"s1":61,"n1":33,"miss":0,"t2":171,"n2":0},{"d":"2026-04-15","h":12,"s":87,"oh":4.34,"b":0,"eng":822.6,"s1":56,"n1":0,"miss":0,"t2":97,"n2":0},{"d":"2026-04-15","h":13,"s":90,"oh":4.77,"b":0,"eng":846.9,"s1":52,"n1":0,"miss":0,"t2":98,"n2":0},{"d":"2026-04-15","h":14,"s":107,"oh":4.98,"b":0,"eng":1021.68,"s1":65,"n1":1,"miss":0,"t2":118,"n2":1},{"d":"2026-04-15","h":15,"s":89,"oh":5.2,"b":0,"eng":975.66,"s1":50,"n1":1,"miss":0,"t2":104,"n2":1},{"d":"2026-04-15","h":16,"s":122,"oh":12.04,"b":0,"eng":1125.89,"s1":66,"n1":0,"miss":0,"t2":143,"n2":0},{"d":"2026-04-15","h":17,"s":72,"oh":6.99,"b":0,"eng":667.35,"s1":36,"n1":0,"miss":0,"t2":79,"n2":0},{"d":"2026-04-15","h":18,"s":165,"oh":6.69,"b":0,"eng":1806.36,"s1":105,"n1":1,"miss":0,"t2":192,"n2":2},{"d":"2026-04-15","h":19,"s":115,"oh":6.26,"b":0,"eng":1178.82,"s1":69,"n1":0,"miss":0,"t2":136,"n2":1},{"d":"2026-04-15","h":20,"s":125,"oh":5.91,"b":1,"eng":1149.05,"s1":77,"n1":0,"miss":0,"t2":147,"n2":0},{"d":"2026-04-15","h":21,"s":117,"oh":5.47,"b":0,"eng":996.81,"s1":72,"n1":0,"miss":0,"t2":139,"n2":0},{"d":"2026-04-15","h":22,"s":169,"oh":6.13,"b":0,"eng":1458.01,"s1":168,"n1":1,"miss":0,"t2":185,"n2":2},{"d":"2026-04-16","h":10,"s":173,"oh":6.01,"b":0,"eng":2016.07,"s1":54,"n1":59,"miss":0,"t2":199,"n2":0},{"d":"2026-04-16","h":11,"s":148,"oh":6.36,"b":0,"eng":1610.84,"s1":74,"n1":24,"miss":0,"t2":161,"n2":1},{"d":"2026-04-16","h":12,"s":134,"oh":5.72,"b":0,"eng":1322.49,"s1":75,"n1":10,"miss":0,"t2":149,"n2":0},{"d":"2026-04-16","h":13,"s":155,"oh":5.84,"b":0,"eng":1654.88,"s1":45,"n1":61,"miss":0,"t2":170,"n2":0},{"d":"2026-04-16","h":14,"s":115,"oh":6.38,"b":0,"eng":1394.48,"s1":72,"n1":0,"miss":0,"t2":147,"n2":0},{"d":"2026-04-16","h":15,"s":116,"oh":5.93,"b":0,"eng":1053.52,"s1":59,"n1":0,"miss":0,"t2":132,"n2":0},{"d":"2026-04-16","h":16,"s":71,"oh":5.66,"b":0,"eng":602.7,"s1":44,"n1":0,"miss":0,"t2":82,"n2":0},{"d":"2026-04-16","h":17,"s":141,"oh":7.4,"b":0,"eng":1134.29,"s1":75,"n1":0,"miss":0,"t2":154,"n2":0},{"d":"2026-04-16","h":18,"s":129,"oh":5.39,"b":0,"eng":1365.58,"s1":74,"n1":1,"miss":0,"t2":146,"n2":2},{"d":"2026-04-16","h":19,"s":109,"oh":4.87,"b":0,"eng":1077.1,"s1":68,"n1":1,"miss":0,"t2":121,"n2":1},{"d":"2026-04-16","h":20,"s":112,"oh":4.78,"b":0,"eng":1095.0,"s1":69,"n1":0,"miss":0,"t2":130,"n2":0},{"d":"2026-04-16","h":21,"s":91,"oh":4.32,"b":3,"eng":823.81,"s1":57,"n1":0,"miss":0,"t2":113,"n2":0},{"d":"2026-04-16","h":22,"s":133,"oh":5.81,"b":1,"eng":1129.3,"s1":133,"n1":0,"miss":0,"t2":146,"n2":0},{"d":"2026-04-17","h":10,"s":132,"oh":5.57,"b":0,"eng":1558.47,"s1":72,"n1":7,"miss":1,"t2":166,"n2":1},{"d":"2026-04-17","h":11,"s":114,"oh":5.61,"b":0,"eng":1178.34,"s1":64,"n1":9,"miss":0,"t2":125,"n2":0},{"d":"2026-04-17","h":12,"s":119,"oh":4.61,"b":0,"eng":1088.03,"s1":76,"n1":2,"miss":0,"t2":132,"n2":1},{"d":"2026-04-17","h":13,"s":104,"oh":4.9,"b":1,"eng":1089.93,"s1":59,"n1":12,"miss":0,"t2":114,"n2":0},{"d":"2026-04-17","h":14,"s":109,"oh":4.83,"b":0,"eng":903.12,"s1":69,"n1":0,"miss":0,"t2":121,"n2":0},{"d":"2026-04-17","h":15,"s":128,"oh":7.81,"b":0,"eng":1155.06,"s1":69,"n1":0,"miss":0,"t2":148,"n2":0},{"d":"2026-04-17","h":16,"s":78,"oh":4.88,"b":0,"eng":799.29,"s1":44,"n1":0,"miss":0,"t2":90,"n2":0},{"d":"2026-04-17","h":17,"s":119,"oh":6.3,"b":1,"eng":1125.23,"s1":71,"n1":0,"miss":0,"t2":134,"n2":0},{"d":"2026-04-17","h":18,"s":164,"oh":6.98,"b":0,"eng":1622.08,"s1":105,"n1":0,"miss":0,"t2":183,"n2":0},{"d":"2026-04-17","h":19,"s":112,"oh":4.92,"b":0,"eng":1103.54,"s1":67,"n1":0,"miss":0,"t2":127,"n2":0},{"d":"2026-04-17","h":20,"s":109,"oh":5.62,"b":1,"eng":1089.83,"s1":67,"n1":0,"miss":0,"t2":119,"n2":0},{"d":"2026-04-17","h":21,"s":105,"oh":5.79,"b":1,"eng":1024.11,"s1":57,"n1":0,"miss":0,"t2":127,"n2":0},{"d":"2026-04-17","h":22,"s":122,"oh":7.0,"b":0,"eng":937.48,"s1":122,"n1":0,"miss":0,"t2":130,"n2":0},{"d":"2026-04-18","h":10,"s":96,"oh":4.77,"b":0,"eng":1014.65,"s1":71,"n1":1,"miss":0,"t2":110,"n2":1},{"d":"2026-04-18","h":11,"s":98,"oh":4.72,"b":0,"eng":851.43,"s1":57,"n1":0,"miss":1,"t2":109,"n2":0},{"d":"2026-04-18","h":12,"s":72,"oh":4.01,"b":0,"eng":629.82,"s1":38,"n1":1,"miss":0,"t2":76,"n2":1},{"d":"2026-04-18","h":13,"s":73,"oh":4.29,"b":0,"eng":737.88,"s1":46,"n1":0,"miss":0,"t2":84,"n2":0},{"d":"2026-04-18","h":14,"s":81,"oh":3.83,"b":0,"eng":784.22,"s1":43,"n1":1,"miss":0,"t2":91,"n2":2},{"d":"2026-04-18","h":15,"s":107,"oh":7.5,"b":0,"eng":945.17,"s1":68,"n1":0,"miss":0,"t2":119,"n2":0},{"d":"2026-04-18","h":16,"s":82,"oh":7.44,"b":0,"eng":701.96,"s1":49,"n1":2,"miss":0,"t2":88,"n2":3},{"d":"2026-04-18","h":17,"s":92,"oh":7.2,"b":1,"eng":902.02,"s1":60,"n1":2,"miss":0,"t2":98,"n2":2},{"d":"2026-04-18","h":18,"s":94,"oh":6.0,"b":0,"eng":866.31,"s1":50,"n1":0,"miss":0,"t2":104,"n2":0},{"d":"2026-04-18","h":19,"s":88,"oh":5.15,"b":0,"eng":821.78,"s1":49,"n1":2,"miss":4,"t2":101,"n2":2},{"d":"2026-04-18","h":20,"s":77,"oh":4.93,"b":0,"eng":766.26,"s1":41,"n1":1,"miss":0,"t2":87,"n2":1},{"d":"2026-04-18","h":21,"s":87,"oh":4.47,"b":0,"eng":654.25,"s1":49,"n1":0,"miss":0,"t2":95,"n2":1},{"d":"2026-04-18","h":22,"s":102,"oh":5.51,"b":1,"eng":843.7,"s1":101,"n1":1,"miss":0,"t2":112,"n2":1},{"d":"2026-04-19","h":10,"s":75,"oh":5.26,"b":0,"eng":654.4,"s1":42,"n1":2,"miss":1,"t2":78,"n2":3},{"d":"2026-04-19","h":11,"s":82,"oh":4.84,"b":0,"eng":720.14,"s1":53,"n1":0,"miss":1,"t2":92,"n2":0},{"d":"2026-04-19","h":12,"s":65,"oh":3.37,"b":0,"eng":507.45,"s1":43,"n1":0,"miss":0,"t2":70,"n2":0},{"d":"2026-04-19","h":13,"s":91,"oh":5.04,"b":1,"eng":765.9,"s1":63,"n1":0,"miss":0,"t2":112,"n2":0},{"d":"2026-04-19","h":14,"s":72,"oh":4.81,"b":0,"eng":643.08,"s1":46,"n1":0,"miss":0,"t2":78,"n2":0},{"d":"2026-04-19","h":15,"s":74,"oh":3.91,"b":0,"eng":763.88,"s1":40,"n1":0,"miss":0,"t2":83,"n2":0},{"d":"2026-04-19","h":16,"s":66,"oh":9.02,"b":0,"eng":580.23,"s1":44,"n1":0,"miss":0,"t2":71,"n2":0},{"d":"2026-04-19","h":17,"s":57,"oh":7.02,"b":0,"eng":579.45,"s1":34,"n1":0,"miss":0,"t2":75,"n2":0},{"d":"2026-04-19","h":18,"s":79,"oh":3.96,"b":0,"eng":941.6,"s1":51,"n1":0,"miss":0,"t2":93,"n2":0},{"d":"2026-04-19","h":19,"s":51,"oh":3.66,"b":0,"eng":484.49,"s1":33,"n1":0,"miss":0,"t2":56,"n2":1},{"d":"2026-04-19","h":20,"s":52,"oh":3.01,"b":1,"eng":501.24,"s1":29,"n1":0,"miss":0,"t2":56,"n2":0},{"d":"2026-04-19","h":21,"s":61,"oh":3.67,"b":0,"eng":506.98,"s1":34,"n1":0,"miss":0,"t2":70,"n2":0},{"d":"2026-04-19","h":22,"s":84,"oh":3.88,"b":1,"eng":748.51,"s1":82,"n1":0,"miss":0,"t2":90,"n2":0},{"d":"2026-04-20","h":9,"s":1,"oh":0.0,"b":0,"eng":4.53,"s1":0,"n1":0,"miss":0,"t2":1,"n2":0},{"d":"2026-04-20","h":10,"s":138,"oh":5.76,"b":0,"eng":1509.94,"s1":88,"n1":1,"miss":0,"t2":160,"n2":1},{"d":"2026-04-20","h":11,"s":163,"oh":5.99,"b":0,"eng":1699.1,"s1":100,"n1":10,"miss":0,"t2":184,"n2":0},{"d":"2026-04-20","h":12,"s":133,"oh":4.66,"b":0,"eng":1054.6,"s1":71,"n1":1,"miss":1,"t2":142,"n2":1},{"d":"2026-04-20","h":13,"s":129,"oh":4.82,"b":0,"eng":1301.67,"s1":65,"n1":13,"miss":0,"t2":149,"n2":0},{"d":"2026-04-20","h":14,"s":163,"oh":6.0,"b":1,"eng":1563.0,"s1":92,"n1":7,"miss":1,"t2":186,"n2":0},{"d":"2026-04-20","h":15,"s":113,"oh":5.82,"b":0,"eng":1080.34,"s1":74,"n1":0,"miss":0,"t2":129,"n2":0},{"d":"2026-04-20","h":16,"s":79,"oh":5.59,"b":1,"eng":622.89,"s1":47,"n1":0,"miss":0,"t2":91,"n2":1},{"d":"2026-04-20","h":17,"s":131,"oh":7.12,"b":2,"eng":1300.0,"s1":79,"n1":0,"miss":2,"t2":148,"n2":0},{"d":"2026-04-20","h":18,"s":205,"oh":8.0,"b":2,"eng":2083.75,"s1":125,"n1":0,"miss":2,"t2":242,"n2":0},{"d":"2026-04-20","h":19,"s":157,"oh":7.23,"b":0,"eng":1596.38,"s1":90,"n1":1,"miss":0,"t2":179,"n2":2},{"d":"2026-04-20","h":20,"s":114,"oh":6.95,"b":0,"eng":1157.14,"s1":67,"n1":1,"miss":0,"t2":135,"n2":2},{"d":"2026-04-20","h":21,"s":126,"oh":6.68,"b":0,"eng":1073.41,"s1":73,"n1":0,"miss":0,"t2":142,"n2":0},{"d":"2026-04-20","h":22,"s":155,"oh":7.44,"b":0,"eng":1458.93,"s1":155,"n1":0,"miss":0,"t2":175,"n2":0},{"d":"2026-04-21","h":10,"s":117,"oh":5.8,"b":0,"eng":1440.95,"s1":78,"n1":0,"miss":0,"t2":133,"n2":2},{"d":"2026-04-21","h":11,"s":110,"oh":5.98,"b":0,"eng":1354.37,"s1":69,"n1":1,"miss":1,"t2":126,"n2":1},{"d":"2026-04-21","h":12,"s":112,"oh":4.46,"b":0,"eng":1255.88,"s1":64,"n1":0,"miss":0,"t2":128,"n2":0},{"d":"2026-04-21","h":13,"s":120,"oh":4.74,"b":0,"eng":1086.92,"s1":66,"n1":0,"miss":1,"t2":132,"n2":1},{"d":"2026-04-21","h":14,"s":95,"oh":4.6,"b":0,"eng":990.6,"s1":54,"n1":6,"miss":1,"t2":108,"n2":1},{"d":"2026-04-21","h":15,"s":90,"oh":5.92,"b":0,"eng":1003.45,"s1":58,"n1":1,"miss":0,"t2":106,"n2":1},{"d":"2026-04-21","h":16,"s":95,"oh":7.85,"b":1,"eng":835.78,"s1":55,"n1":0,"miss":1,"t2":107,"n2":1},{"d":"2026-04-21","h":17,"s":111,"oh":7.84,"b":0,"eng":963.73,"s1":68,"n1":0,"miss":0,"t2":120,"n2":2},{"d":"2026-04-21","h":18,"s":168,"oh":6.8,"b":0,"eng":1925.09,"s1":109,"n1":2,"miss":1,"t2":200,"n2":1},{"d":"2026-04-21","h":19,"s":150,"oh":6.94,"b":1,"eng":1667.24,"s1":102,"n1":0,"miss":1,"t2":181,"n2":0},{"d":"2026-04-21","h":20,"s":100,"oh":6.04,"b":0,"eng":1053.2,"s1":62,"n1":0,"miss":1,"t2":122,"n2":0},{"d":"2026-04-21","h":21,"s":96,"oh":6.03,"b":0,"eng":1006.97,"s1":53,"n1":0,"miss":0,"t2":106,"n2":0},{"d":"2026-04-21","h":22,"s":127,"oh":5.77,"b":1,"eng":1079.64,"s1":126,"n1":0,"miss":0,"t2":136,"n2":0},{"d":"2026-04-22","h":10,"s":98,"oh":4.73,"b":0,"eng":921.96,"s1":60,"n1":1,"miss":0,"t2":107,"n2":2},{"d":"2026-04-22","h":11,"s":111,"oh":5.0,"b":0,"eng":1134.87,"s1":78,"n1":1,"miss":0,"t2":128,"n2":2},{"d":"2026-04-22","h":12,"s":90,"oh":4.11,"b":0,"eng":898.05,"s1":51,"n1":0,"miss":0,"t2":109,"n2":0},{"d":"2026-04-22","h":13,"s":104,"oh":4.0,"b":0,"eng":945.61,"s1":67,"n1":0,"miss":0,"t2":122,"n2":0},{"d":"2026-04-22","h":14,"s":110,"oh":4.53,"b":0,"eng":1034.69,"s1":68,"n1":1,"miss":0,"t2":124,"n2":1},{"d":"2026-04-22","h":15,"s":115,"oh":6.25,"b":0,"eng":1148.32,"s1":73,"n1":1,"miss":0,"t2":133,"n2":1},{"d":"2026-04-22","h":16,"s":109,"oh":9.3,"b":1,"eng":886.49,"s1":68,"n1":0,"miss":1,"t2":121,"n2":0},{"d":"2026-04-22","h":17,"s":43,"oh":6.44,"b":0,"eng":278.76,"s1":27,"n1":0,"miss":0,"t2":43,"n2":0}],"dates":["2026-03-31","2026-04-01","2026-04-02","2026-04-03","2026-04-04","2026-04-05","2026-04-06","2026-04-07","2026-04-08","2026-04-09","2026-04-10","2026-04-11","2026-04-12","2026-04-13","2026-04-14","2026-04-15","2026-04-16","2026-04-17","2026-04-18","2026-04-19","2026-04-20","2026-04-21","2026-04-22"],"months":["2026-03","2026-04"]};
+
+// ── GitHub config ──
+function loadGHConfig(){
+  const c=JSON.parse(localStorage.getItem('gh_config')||'{}');
+  if(c.user)    document.getElementById('gh-user').value=c.user;
+  if(c.repo)    document.getElementById('gh-repo').value=c.repo;
+  if(c.branch)  document.getElementById('gh-branch').value=c.branch||'main';
+  if(c.token)   document.getElementById('gh-token').value=c.token;
+}
+function saveGHConfig(){
+  localStorage.setItem('gh_config', JSON.stringify({
+    user:   document.getElementById('gh-user').value.trim(),
+    repo:   document.getElementById('gh-repo').value.trim(),
+    branch: document.getElementById('gh-branch').value.trim()||'main',
+    token:  document.getElementById('gh-token').value.trim(),
+  }));
+}
+function getGHConfig(){
+  return JSON.parse(localStorage.getItem('gh_config')||'{}');
+}
+
+// ── DB (loaded async from GitHub or embedded fallback) ──
+let DB = null;
+
+async function loadData(){
+  const cfg = getGHConfig();
+  const branch = cfg.branch || 'main';
+
+  if(cfg.user && cfg.repo){
+    const url = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/${branch}/data.json?_=${Date.now()}`;
+    try{
+      const r = await fetch(url);
+      if(r.ok){ DB = await r.json(); console.log('✓ data.json loaded from GitHub'); return; }
+    } catch(e){ console.warn('GitHub fetch failed, using embedded data'); }
+  }
+  // Fallback: embedded snapshot
+  DB = DB_EMBEDDED;
+  console.log('✓ Using embedded data snapshot');
+}
+
+
+// ====== MONTH NAMES ======
+const MONTH_NAMES={
+  '01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo',
+  '06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre',
+  '10':'Octubre','11':'Noviembre','12':'Diciembre'
+};
+
+// ====== WEEK MAP (dynamic per month) ======
+function buildWeekMap(month){
+  const md = DB.dates.filter(d=>d.startsWith(month));
+  return {
+    'all': md,
+    '1': md.filter(d=>{const n=+d.slice(8);return n>=1&&n<=7;}),
+    '2': md.filter(d=>{const n=+d.slice(8);return n>=8&&n<=14;}),
+    '3': md.filter(d=>{const n=+d.slice(8);return n>=15&&n<=21;}),
+    '4': md.filter(d=>{const n=+d.slice(8);return n>=22&&n<=31;}),
+    // For months where data starts at end (e.g. Mar 31 only)
+    'solo': md,
+  };
+}
+
+// ====== KPIS CONFIG ======
+const KPIS=[
+  {key:'dsat',lbl:'DSAT',ico:'😞',goal:.0145,dir:'lte',
+   fmt:v=>(v*100).toFixed(2)+'%',gfmt:'≤ 1.45%',
+   tip:'Fórmula: Bad chats / Served chats\nMeta: ≤ 1.45%\nInsatisfacción del cliente'},
+  {key:'aht',lbl:'AHT',ico:'⏱',goal:null,dir:'info',
+   fmt:v=>v.toFixed(1)+' min',gfmt:'Referencia',
+   tip:'Fórmula: Engagement Duration / Served chats\nTiempo promedio de atención'},
+  {key:'tph',lbl:'TPH',ico:'⚡',goal:17,dir:'gte',
+   fmt:v=>v.toFixed(1),gfmt:'≥ 17',
+   tip:'Fórmula: Served chats / Online Time (H)\nMeta: ≥ 17 chats/hora'},
+  {key:'servingRate',lbl:'Serving Rate',ico:'🎯',goal:null,dir:'info',
+   fmt:v=>(v*100).toFixed(1)+'%',gfmt:'Referencia',
+   tip:'Fórmula: Serving Time (H) / Online Time (H)\nTiempo activo en atención'},
+  {key:'s30s1',lbl:'30s1',ico:'🚀',goal:.95,dir:'gte',
+   fmt:v=>(v*100).toFixed(1)+'%',gfmt:'≥ 95%',
+   tip:'Fórmula: is30s1ServedID / (is30s1 + not30s1)\nMeta: ≥ 95%\n1er contacto en < 30s'},
+  {key:'s30s2',lbl:'30s2',ico:'🏃',goal:.99,dir:'gte',
+   fmt:v=>(v*100).toFixed(2)+'%',gfmt:'≥ 99%',
+   tip:'Fórmula: 30s2_Served / (30s2 + Non-30s2 + Missed)\nMeta: ≥ 99%\nSLA global de velocidad'},
+  {key:'missRate',lbl:'Miss Rate',ico:'📵',goal:.01,dir:'lte',
+   fmt:v=>(v*100).toFixed(2)+'%',gfmt:'≤ 1%',
+   tip:'Fórmula: Missed / (Missed + Served)\nMeta: ≤ 1%\nChats no atendidos'},
+  {key:'onlineH',lbl:'Online H',ico:'🕐',goal:6.5,dir:'gte',
+   fmt:v=>v.toFixed(1)+'h',gfmt:'≥ 6.5H/día',
+   tip:'Tiempo en línea (promedio por asesor)\nMeta diaria: ≥ 6.5H'},
+  {key:'assignedReplied',lbl:'Chats Atendidos',ico:'💬',goal:null,dir:'info',
+   fmt:v=>Math.round(v).toLocaleString('es-CO'),gfmt:'Acumulado',
+   tip:'Columna: Assigned & Replied Chat\nTotal de chats efectivamente atendidos y respondidos por los asesores en el período seleccionado.'},
+];
+
+// ====== AGGREGATION ======
+function calcKPIs(rows){
+  if(!rows.length) return null;
+  let served=0,bad=0,engDur=0,oh=0,sh=0,s1=0,n1=0,miss=0,t2=0,n2=0,missed_t=0,assignedReplied=0;
+  rows.forEach(r=>{
+    served+=r.served; bad+=r.bad; oh+=r.onlineH;
+    assignedReplied+=(r.assignedReplied||0);
+    // Reconstruct raw values
+    engDur+=r.aht*r.served;
+    sh+=r.servingRate*r.onlineH;
+    const s1n=r.s30s1*(r.served); const n1n=r.served-s1n; // approx
+    s1+=s1n; n1+=n1n;
+    const mR=r.missRate; const totalOpp=Math.round(r.served/(1-mR)||r.served);
+    const missEng=totalOpp-r.served; missed_t+=missEng;
+    const t2n=r.s30s2*(r.served+missEng); t2+=t2n; n2+=(r.served-t2n);
+  });
+  return{
+    dsat: served>0?bad/served:0,
+    aht: served>0?engDur/served:0,
+    tph: oh>0?served/oh:0,
+    servingRate: oh>0?sh/oh:0,
+    s30s1: (s1+n1)>0?s1/(s1+n1):0,
+    s30s2: (t2+n2+missed_t)>0?t2/(t2+n2+missed_t):0,
+    missRate: (missed_t+served)>0?missed_t/(missed_t+served):0,
+    onlineH: oh,
+    served, bad, missed: missed_t,
+    assignedReplied,
+    days: [...new Set(rows.map(r=>r.date))].length,
+  };
+}
+
+function statusOf(kpis){
+  const s={};
+  KPIS.forEach(k=>{
+    if(k.dir==='info'){s[k.key]='neutral';return;}
+    const v=kpis[k.key];
+    if(k.dir==='gte') s[k.key]=v>=k.goal?'good':(v>=k.goal*.95?'warn':'bad');
+    else s[k.key]=v<=k.goal?'good':(v<=k.goal*1.10?'warn':'bad');
+  });
+  return s;
+}
+
+// ====== STATE ======
+let ST={view:'mes',month:DB.months[DB.months.length-1],semana:'all',dia:'all',asesor:'all',trendKPI:'tph',hmKPI:'tph'};
+let CHARTS={};
+let sortKey='tph',sortAsc=false;
+
+// ====== FILTER ======
+function filteredData(){
+  const wm=buildWeekMap(ST.month);
+  return DB.daily.filter(r=>{
+    if(!r.date.startsWith(ST.month)) return false;
+    if(ST.semana!=='all'&&!(wm[ST.semana]||[]).includes(r.date)) return false;
+    if(ST.dia!=='all'&&r.date!==ST.dia) return false;
+    if(ST.asesor!=='all'&&r.ulp!==ST.asesor) return false;
+    return true;
+  });
+}
+function filteredDates(){return[...new Set(filteredData().map(r=>r.date))].sort();}
+
+// ====== INIT DROPDOWNS ======
+function initDropdowns(){
+  // Month dropdown
+  const sm=document.getElementById('sel-month');
+  DB.months.forEach(m=>{
+    const o=document.createElement('option');
+    o.value=m;
+    const [y,mo]=m.split('-');
+    o.textContent=`${MONTH_NAMES[mo]||mo} ${y}`;
+    if(m===ST.month) o.selected=true;
+    sm.appendChild(o);
+  });
+  // Agents
+  const sa=document.getElementById('sel-asesor');
+  DB.agents.forEach(a=>{
+    const o=document.createElement('option');
+    o.value=a.ulp; o.textContent=a.name;
+    sa.appendChild(o);
+  });
+  // Populate week + day for initial month
+  populateWeekDay(ST.month);
+}
+
+function populateWeekDay(month){
+  const md=DB.dates.filter(d=>d.startsWith(month));
+  const [y,mo]=month.split('-');
+  const mname=MONTH_NAMES[mo]||mo;
+
+  // Weeks
+  const sw=document.getElementById('sel-semana');
+  sw.innerHTML='<option value="all">Todas</option>';
+  const wm=buildWeekMap(month);
+  const wDefs=[
+    {v:'1',d1:1,d2:7},{v:'2',d1:8,d2:14},{v:'3',d1:15,d2:21},{v:'4',d1:22,d2:31}
+  ];
+  wDefs.forEach(w=>{
+    if(wm[w.v].length===0) return;
+    const first=+wm[w.v][0].slice(8), last=+wm[w.v][wm[w.v].length-1].slice(8);
+    const o=document.createElement('option');
+    o.value=w.v;
+    o.textContent=`Sem ${w.v} (${mname.slice(0,3)} ${first}–${last})`;
+    sw.appendChild(o);
+  });
+
+  // Days
+  const sd=document.getElementById('sel-dia');
+  sd.innerHTML='<option value="all">Todos</option>';
+  md.forEach(d=>{
+    const o=document.createElement('option');
+    o.value=d;
+    o.textContent=`${+d.slice(8)} ${mname.slice(0,3)}`;
+    sd.appendChild(o);
+  });
+}
+
+function setView(v){
+  ST.view=v;
+  ['mes','semana','dia'].forEach(x=>document.getElementById('btn-'+x).classList.toggle('active',x===v));
+  updateFilters();
+}
+function updateMonth(){
+  ST.month=document.getElementById('sel-month').value;
+  ST.semana='all';
+  ST.dia='all';
+  populateWeekDay(ST.month);
+  renderAll();
+}
+function updateFilters(){
+  ST.semana=document.getElementById('sel-semana').value;
+  ST.dia=document.getElementById('sel-dia').value;
+  ST.asesor=document.getElementById('sel-asesor').value;
+  renderAll();
+}
+
+// ====== KPI CARDS ======
+function renderKPICards(){
+  const data=filteredData();
+  const kpis=calcKPIs(data);
+  if(!kpis){document.getElementById('kpi-grid').innerHTML='<p style="color:var(--t3)">Sin datos para el período.</p>';return;}
+  const st=statusOf(kpis);
+  const dates=filteredDates();
+
+  // Period label
+  const [sy,smo]=ST.month.split('-');
+  const smname=MONTH_NAMES[smo]||smo;
+  const lbl=dates.length===0?'Sin datos':
+    dates.length===1?`${+dates[0].slice(8)} ${smname} ${sy}`:
+    dates.length<=7?`${+dates[0].slice(8)}–${+dates[dates.length-1].slice(8)} ${smname} ${sy}`:`${smname} ${sy} · Acumulado`;
+  document.getElementById('kpi-period-label').textContent=`${lbl} · ${kpis.served.toLocaleString('es-CO')} chats · ${data.length} registros`;
+
+  // onlineH → per-agent-day average; assignedReplied → raw total
+  const avgOH = data.length>0 ? kpis.onlineH/([...new Set(data.map(r=>r.ulp))].length||1) : 0;
+  const kpisDisp = {...kpis, onlineH: avgOH, assignedReplied: kpis.assignedReplied};
+
+  const grid=document.getElementById('kpi-grid');
+  grid.innerHTML=KPIS.map(k=>{
+    const v=kpisDisp[k.key];
+    const s=st[k.key]||'neutral';
+    const stLbl=s==='good'?'✓ META':s==='warn'?'⚠ ALERTA':s==='bad'?'✗ OFF META':'— REF.';
+    let barPct=50,barClr='var(--cyan)';
+    if(k.goal){
+      if(k.dir==='gte') barPct=Math.min(100,(v/k.goal)*100);
+      else barPct=Math.max(0,Math.min(100,(1-Math.max(0,v-k.goal)/k.goal)*100+30));
+      barClr=s==='good'?'var(--teal)':s==='warn'?'var(--yellow)':'var(--red)';
+    }
+    return`<div class="kcard ${s}">
+      <div class="klbl">${k.ico} ${k.lbl}<div class="tti">?<div class="ttip">${k.tip}</div></div></div>
+      <div class="kval">${k.fmt(v)}</div>
+      <div class="mpb-wrap"><div class="mpb-bg"><div class="mpb-fill" style="width:${barPct.toFixed(0)}%;background:${barClr}"></div></div></div>
+      <div class="kmeta"><span class="kgoal">Meta: ${k.gfmt}</span><span class="kst">${stLbl}</span></div>
+    </div>`;
+  }).join('');
+}
+
+// ====== ONLINE TIME GRID ======
+function renderOnlineTime(){
+  const data=filteredData();
+  const dates=filteredDates();
+  const daysN=Math.max(1,dates.length);
+  const GOAL_DAILY=6.5;
+  const GOAL_PERIOD=GOAL_DAILY*daysN;
+
+  const agMap={};
+  DB.agents.forEach(a=>{agMap[a.ulp]=a.name;});
+
+  // Group by agent
+  const byAgent={};
+  data.forEach(r=>{
+    if(!byAgent[r.ulp]) byAgent[r.ulp]={name:r.name,totalH:0,days:0};
+    byAgent[r.ulp].totalH+=r.onlineH;
+    byAgent[r.ulp].days++;
+  });
+
+  const grid=document.getElementById('ot-grid');
+  if(!Object.keys(byAgent).length){grid.innerHTML='<p style="color:var(--t3);font-size:11px;font-family:var(--mono)">Sin datos para el período.</p>';return;}
+
+  grid.innerHTML=Object.entries(byAgent).sort((a,b)=>b[1].totalH-a[1].totalH).map(([ulp,ag])=>{
+    const pct=Math.min(100,(ag.totalH/GOAL_PERIOD)*100);
+    const avgDay=ag.totalH/Math.max(1,ag.days);
+    const s=avgDay>=GOAL_DAILY?'good':avgDay>=GOAL_DAILY*.9?'warn':'bad';
+    const clr=s==='good'?'var(--teal)':s==='warn'?'var(--yellow)':'var(--red)';
+    return`<div class="ot-card">
+      <div class="ot-name" style="color:${clr}">${ag.name}</div>
+      <div class="ot-bar-bg"><div class="ot-bar-fill" style="width:${pct.toFixed(0)}%;background:${clr}"></div></div>
+      <div class="ot-nums">
+        <span class="ot-val" style="color:${clr}">${ag.totalH.toFixed(1)}H <span style="font-size:9px;color:var(--t3)">total</span></span>
+        <span class="ot-goal">Ø ${avgDay.toFixed(1)}H/día · Meta ${GOAL_DAILY}H</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ====== TREND CHART ======
+function initTrendBtns(){
+  const wrap=document.getElementById('trend-btns');
+  ['tph','dsat','s30s1','s30s2','missRate','aht','servingRate'].forEach(k=>{
+    const def=KPIS.find(x=>x.key===k);
+    const btn=document.createElement('button');
+    btn.className='btn-xs'+(k===ST.trendKPI?' active':'');
+    btn.textContent=def.lbl;
+    btn.onclick=()=>{
+      ST.trendKPI=k;
+      document.querySelectorAll('#trend-btns .btn-xs').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTrendChart();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function renderTrendChart(){
+  const dates=filteredDates();
+  if(!dates.length){if(CHARTS.trend)CHARTS.trend.destroy();return;}
+  const def=KPIS.find(x=>x.key===ST.trendKPI);
+  const isPct=['dsat','s30s1','s30s2','servingRate','missRate'].includes(ST.trendKPI);
+
+  const vals=dates.map(date=>{
+    const recs=filteredData().filter(r=>r.date===date);
+    const k=calcKPIs(recs);
+    if(!k) return null;
+    const v=k[ST.trendKPI];
+    return isPct?+(v*100).toFixed(3):+v.toFixed(3);
+  });
+
+  const goalVal=def.goal?(isPct?+(def.goal*100).toFixed(2):+def.goal.toFixed(2)):null;
+  const labels=dates.map(d=>`${+d.slice(8)}/4`);
+
+  const datasets=[{
+    label:def.lbl,data:vals,
+    borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,0.06)',
+    tension:.35,fill:true,pointBackgroundColor:'#00d4ff',
+    pointRadius:3,pointHoverRadius:5,borderWidth:2,
+  }];
+  if(goalVal!==null) datasets.push({
+    label:'Meta',data:Array(labels.length).fill(goalVal),
+    borderColor:'rgba(255,255,255,0.25)',backgroundColor:'transparent',
+    borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false,
+  });
+
+  if(CHARTS.trend) CHARTS.trend.destroy();
+  CHARTS.trend=new Chart(document.getElementById('chart-trend').getContext('2d'),{
+    type:'line',data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#7a98c0',font:{size:9,family:'JetBrains Mono'},boxWidth:10}},
+        tooltip:{backgroundColor:'#1e2d48',titleFont:{family:'JetBrains Mono',size:10},bodyFont:{family:'JetBrains Mono',size:10},borderColor:'#2a3a5a',borderWidth:1}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#3b4f6b',font:{size:9,family:'JetBrains Mono'}}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#3b4f6b',font:{size:9,family:'JetBrains Mono'}}}
+      }
+    }
+  });
+}
+
+// ====== AGENT BAR ======
+function renderAgentBar(){
+  const kpiKey=document.getElementById('bar-kpi-sel').value;
+  const def=KPIS.find(x=>x.key===kpiKey);
+  const data=filteredData();
+  const isPct=['dsat','s30s1','s30s2','servingRate','missRate'].includes(kpiKey);
+
+  const avs=DB.agents.map(ag=>{
+    const recs=data.filter(r=>r.ulp===ag.ulp);
+    if(!recs.length) return null;
+    const k=calcKPIs(recs);
+    let v=k[kpiKey];
+    if(kpiKey==='onlineH') v=k.onlineH/Math.max(1,recs.length); // avg daily
+    return{name:ag.name,val:isPct?+(v*100).toFixed(3):+v.toFixed(3)};
+  }).filter(Boolean);
+
+  const gv=def.goal?(isPct?+(def.goal*100).toFixed(2):+def.goal.toFixed(2)):null;
+  const colors=avs.map(a=>{
+    if(!def.goal) return 'rgba(0,212,255,0.65)';
+    if(def.dir==='gte') return a.val>=gv?'rgba(0,229,179,0.7)':a.val>=gv*.95?'rgba(255,209,102,0.7)':'rgba(255,71,87,0.7)';
+    return a.val<=gv?'rgba(0,229,179,0.7)':a.val<=gv*1.10?'rgba(255,209,102,0.7)':'rgba(255,71,87,0.7)';
+  });
+
+  const goalDs=gv!==null?[{
+    label:'Meta',data:Array(avs.length).fill(gv),
+    borderColor:'rgba(255,255,255,0.28)',backgroundColor:'transparent',
+    type:'line',borderDash:[4,4],borderWidth:1.5,pointRadius:0,fill:false,order:0,
+  }]:[];
+
+  if(CHARTS.agents) CHARTS.agents.destroy();
+  CHARTS.agents=new Chart(document.getElementById('chart-agents').getContext('2d'),{
+    type:'bar',
+    data:{labels:avs.map(a=>a.name.split(' ')[0]),datasets:[
+      {label:def.lbl,data:avs.map(a=>a.val),backgroundColor:colors,borderColor:colors.map(c=>c.replace('.7','1').replace('.65','1')),borderWidth:1,borderRadius:3,order:1},
+      ...goalDs
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#7a98c0',font:{size:9,family:'JetBrains Mono'},boxWidth:10}},
+        tooltip:{
+          backgroundColor:'#1e2d48',titleFont:{family:'JetBrains Mono',size:10},bodyFont:{family:'JetBrains Mono',size:10},borderColor:'#2a3a5a',borderWidth:1,
+          callbacks:{title:c=>avs[c[0].dataIndex].name,label:c=>` ${c.parsed.y}${isPct?'%':''}`}
+        }
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#3b4f6b',font:{size:8,family:'JetBrains Mono'},maxRotation:35}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#3b4f6b',font:{size:9,family:'JetBrains Mono'}}}
+      }
+    }
+  });
+}
+
+// ====== INTERVAL CHART (REAL DATA) ======
+// ====== TIMEZONE ======
+let TZ_MODE='CO'; // 'CO' = Colombia (default) | 'CN' = China label view
+// NOTE: DB.iv hours are already in Colombia time. These helpers are for display labels only.
+function cnToCol(h){return(h-13+24)%24;}  // kept for legacy refs
+function colToCn(h){return(h+13)%24;}
+
+function setTZ(mode){
+  TZ_MODE=mode;
+  document.getElementById('tz-cn').classList.toggle('active',mode==='CN');
+  document.getElementById('tz-co').classList.toggle('active',mode==='CO');
+  renderIntervalChart();
+}
+
+function getIntervals(){
+  // iv rows are already in Colombia date+hour — no TZ conversion needed
+  const activeDates=filteredDates();
+  const rows=DB.iv.filter(r=>activeDates.includes(r.d));
+
+  // Aggregate by Colombia hour
+  const byH={};
+  rows.forEach(r=>{
+    if(!byH[r.h]) byH[r.h]={hour:r.h,s:0,oh:0,b:0,eng:0,s1:0,n1:0,miss:0,t2:0,n2:0};
+    const x=byH[r.h];
+    x.s+=r.s; x.oh+=r.oh; x.b+=r.b; x.eng+=r.eng;
+    x.s1+=r.s1; x.n1+=r.n1; x.miss+=r.miss; x.t2+=r.t2; x.n2+=r.n2;
+  });
+
+  // Compute KPIs per hour
+  const ivs=Object.values(byH).map(x=>{
+    const colLbl=`${String(x.hour).padStart(2,'0')}:00`;
+    const cnHour=(x.hour+13)%24;  // reverse: Colombia→China for display only
+    const cnLbl=`${String(cnHour).padStart(2,'0')}:00`;
+    return {
+      hour: x.hour,           // Colombia hour
+      colHour: x.hour,
+      colLabel: colLbl,
+      cnHour: cnHour,
+      cnLabel: cnLbl,
+      label: colLbl,          // default display label
+      volume: x.s, onlineH: x.oh,
+      tph:      x.oh>0        ? +(x.s/x.oh).toFixed(2)              : 0,
+      dsat:     x.s>0         ? +(x.b/x.s*100).toFixed(3)           : 0,
+      s30s1:    (x.s1+x.n1)>0 ? +(x.s1/(x.s1+x.n1)*100).toFixed(2) : 0,
+      s30s2:    (x.t2+x.n2+x.miss)>0 ? +(x.t2/(x.t2+x.n2+x.miss)*100).toFixed(3) : 0,
+      missRate: (x.miss+x.s)>0 ? +(x.miss/(x.miss+x.s)*100).toFixed(3) : 0,
+      aht:      x.s>0         ? +(x.eng/x.s).toFixed(2)             : 0,
+    };
+  });
+
+  // Sort and assign display label per TZ toggle
+  if(TZ_MODE==='CO'){
+    ivs.sort((a,b)=>a.colHour-b.colHour);
+    return ivs.map(iv=>({...iv, displayLabel: iv.colLabel, displayHour: iv.colHour}));
+  } else {
+    // Show China hour label but keep Colombia-based sort value mapped to China
+    ivs.sort((a,b)=>a.cnHour-b.cnHour);
+    return ivs.map(iv=>({...iv, displayLabel: iv.cnLabel, displayHour: iv.cnHour}));
+  }
+}
+
+function renderIntervalChart(){
+  const kpi=document.getElementById('iv-kpi-sel').value;
+  const allIvs=getIntervals();
+  const intervals=allIvs.filter(iv=>iv.volume>0||iv.onlineH>0);
+  const labels=intervals.map(iv=>iv.displayLabel);
+  const vals=intervals.map(iv=>iv[kpi]??0);
+  const volVals=intervals.map(iv=>iv.volume);
+  const isPct=['dsat','s30s1','s30s2','missRate'].includes(kpi);
+  const mainC=(['dsat','missRate'].includes(kpi))?'#ff4757':'#00d4ff';
+  const mainBg=(['dsat','missRate'].includes(kpi))?'rgba(255,71,87,0.07)':'rgba(0,212,255,0.07)';
+  const def=KPIS.find(x=>x.key===kpi);
+  const gv=def&&def.goal?(isPct?def.goal*100:def.goal):null;
+
+  // TZ note + peak/low badges
+  const tzLabel=TZ_MODE==='CO'?'🇨🇴 Hora Colombia (UTC−5) — datos agrupados por fecha/hora Colombia real':'🇨🇳 Hora China (UTC+8) — etiqueta referencial (datos ya convertidos a Colombia)';
+  document.getElementById('iv-tz-note').textContent=tzLabel;
+
+  // Peak and low hour from active intervals
+  const withVol=intervals.filter(iv=>iv.volume>0);
+  if(withVol.length){
+    const peak=withVol.reduce((a,b)=>b.volume>a.volume?b:a);
+    const low=withVol.reduce((a,b)=>b.volume<a.volume?b:a);
+    const tzSuffix=TZ_MODE==='CO'?'COT':'CST';
+    document.getElementById('iv-peak-badge').textContent=`⚡ Peak: ${peak.displayLabel} ${tzSuffix} · ${peak.volume.toLocaleString('es-CO')} chats`;
+    document.getElementById('iv-low-badge').textContent=`🌙 Valle: ${low.displayLabel} ${tzSuffix} · ${low.volume.toLocaleString('es-CO')} chats`;
+  }
+
+  const datasets=[{
+    label:kpi==='volume'?'Chats Servidos':(def?def.lbl:kpi),
+    data:vals,borderColor:mainC,backgroundColor:mainBg,
+    tension:.4,fill:true,yAxisID:'y',pointRadius:2.5,borderWidth:2,
+  }];
+  if(kpi!=='volume') datasets.push({
+    label:'Volumen (ref.)',data:volVals,
+    borderColor:'rgba(255,255,255,0.07)',backgroundColor:'rgba(255,255,255,0.02)',
+    tension:.4,fill:true,yAxisID:'y1',pointRadius:0,borderWidth:1,borderDash:[3,4],
+  });
+  if(gv!==null) datasets.push({
+    label:'Meta',data:Array(labels.length).fill(gv),
+    borderColor:'rgba(255,255,255,0.25)',backgroundColor:'transparent',
+    type:'line',borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y',
+  });
+
+  if(CHARTS.interval) CHARTS.interval.destroy();
+  const scales={
+    x:{
+      grid:{color:'rgba(255,255,255,0.03)'},
+      ticks:{color:'#3b4f6b',font:{size:8.5,family:'JetBrains Mono'}},
+      title:{display:true,
+        text:TZ_MODE==='CO'?'Hora Colombia (UTC−5)':'Hora China (UTC+8)',
+        color:'#3b4f6b',font:{size:9,family:'JetBrains Mono'}}
+    },
+    y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#3b4f6b',font:{size:9,family:'JetBrains Mono'}},
+      title:{display:true,text:kpi==='volume'?'Chats':isPct?'%':kpi==='aht'?'min':'',color:'#3b4f6b',font:{size:8}}},
+  };
+  if(kpi!=='volume') scales.y1={position:'right',grid:{display:false},ticks:{color:'#1e2d42',font:{size:8}},
+    title:{display:true,text:'Volumen',color:'#1e2d42',font:{size:8}}};
+
+  CHARTS.interval=new Chart(document.getElementById('chart-interval').getContext('2d'),{
+    type:'line',data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#7a98c0',font:{size:9,family:'JetBrains Mono'},boxWidth:10}},
+        tooltip:{
+          backgroundColor:'#1e2d48',titleFont:{family:'JetBrains Mono',size:10},
+          bodyFont:{family:'JetBrains Mono',size:10},borderColor:'#2a3a5a',borderWidth:1,
+          callbacks:{
+            title:ctx=>{
+              const iv=intervals[ctx[0].dataIndex];
+              if(!iv) return '';
+              if(TZ_MODE==='CO'){
+                return `🇨🇴 ${iv.colLabel} COT  ·  🇨🇳 ${iv.cnLabel} CST`;
+              } else {
+                return `🇨🇳 ${iv.cnLabel} CST  ·  🇨🇴 ${iv.colLabel} COT`;
+              }
+            }
+          }
+        }
+      },
+      scales
+    }
+  });
+}
+
+// ====== HEATMAP ======
+const HM_COLORS=['rgb(210,48,48)','rgb(235,95,60)','rgb(253,155,68)','rgb(253,209,102)','rgb(180,225,110)','rgb(80,210,140)','rgb(46,204,113)'];
+
+function hmColor(v,key,all){
+  const mn=Math.min(...all),mx=Math.max(...all);
+  const norm=mx===mn?.5:(v-mn)/(mx-mn);
+  const def=KPIS.find(x=>x.key===key);
+  const r=def.dir==='gte'?norm:1-norm;
+  const i=Math.min(6,Math.floor(r*7));
+  return HM_COLORS[i];
+}
+
+function initHMBtns(){
+  const wrap=document.getElementById('hm-kpi-btns');
+  ['tph','dsat','s30s1','s30s2','missRate','onlineH'].forEach(k=>{
+    const def=KPIS.find(x=>x.key===k);
+    const btn=document.createElement('button');
+    btn.className='btn-xs'+(k===ST.hmKPI?' active':'');
+    btn.textContent=def.lbl;
+    btn.onclick=()=>{
+      ST.hmKPI=k;
+      document.querySelectorAll('#hm-kpi-btns .btn-xs').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      renderHeatmap();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function renderHeatmap(){
+  const def=KPIS.find(x=>x.key===ST.hmKPI);
+  const isPct=['dsat','s30s1','s30s2','servingRate','missRate'].includes(ST.hmKPI);
+  const dates=filteredDates().slice(0,20);
+  const data=filteredData();
+  const allVals=[];
+
+  const rows=DB.agents.map(ag=>{
+    const dv=dates.map(date=>{
+      const recs=data.filter(r=>r.date===date&&r.ulp===ag.ulp);
+      if(!recs.length) return null;
+      const k=calcKPIs(recs);
+      let v=k[ST.hmKPI];
+      if(ST.hmKPI==='onlineH') v=k.onlineH;
+      return isPct?+(v*100).toFixed(2):+v.toFixed(2);
+    });
+    dv.forEach(v=>{if(v!==null)allVals.push(v);});
+    return{ag,dv};
+  }).filter(({dv})=>dv.some(v=>v!==null));
+
+  let html=`<div class="hm-hdr"><div class="hm-alcol">ASESOR</div>${dates.map(d=>`<div class="hm-dlbl">${+d.slice(8)}</div>`).join('')}</div>`;
+  rows.forEach(({ag,dv})=>{
+    html+=`<div class="hm-row"><div class="hm-aname" title="${ag.name}">${ag.name}</div>
+    ${dv.map((v,i)=>v===null?`<div class="hm-cell" style="background:rgba(255,255,255,.03);color:var(--t3)">—</div>`:
+      `<div class="hm-cell" style="background:${hmColor(v,ST.hmKPI,allVals)}" title="${ag.name} · ${+dates[i].slice(8)} Abr · ${v}${isPct?'%':''}">${v}</div>`).join('')}
+    </div>`;
+  });
+
+  document.getElementById('hm-container').innerHTML=html;
+  document.getElementById('hm-legend').innerHTML=HM_COLORS.map(c=>`<div class="hm-leg-box" style="background:${c}"></div>`).join('');
+}
+
+// ====== TABLE ======
+function renderTable(){
+  const data=filteredData();
+  const dates=filteredDates();
+  const daysN=Math.max(1,dates.length);
+
+  let rows=DB.agents.map(ag=>{
+    const recs=data.filter(r=>r.ulp===ag.ulp);
+    if(!recs.length) return null;
+    const k=calcKPIs(recs);
+    const s=statusOf(k);
+    const avgOH=k.onlineH/Math.max(1,recs.length);
+    const bad=Object.values(s).filter(x=>x==='bad').length;
+    const overall=bad>=3?'bad':bad>=1?'warn':'good';
+    return{ag,kpis:k,st:s,overall,avgOH};
+  }).filter(Boolean);
+
+  rows.sort((a,b)=>{
+    let ak,bk;
+    if(sortKey==='served'){ak=a.kpis.served;bk=b.kpis.served;}
+    else if(sortKey==='onlineH'){ak=a.avgOH;bk=b.avgOH;}
+    else{ak=a.kpis[sortKey]??0;bk=b.kpis[sortKey]??0;}
+    return sortAsc?ak-bk:bk-ak;
+  });
+
+  document.getElementById('tbl-body').innerHTML=rows.map(({ag,kpis,st,overall,avgOH})=>{
+    const cell=(k,fmt,s)=>`<td class="${s==='good'?'vg':s==='warn'?'vw':s==='bad'?'vb':'vn'}">${fmt}</td>`;
+    const ohS=avgOH>=6.5?'good':avgOH>=5.85?'warn':'bad';
+    const stLbl=overall==='good'?'✓ OK':overall==='warn'?'⚠ Alerta':'✗ Crítico';
+    return`<tr>
+      <td><div class="td-ag">${ag.name}</div><div class="td-ulp">${ag.ulp}</div></td>
+      ${cell('dsat',(kpis.dsat*100).toFixed(2)+'%',st.dsat)}
+      ${cell('aht',kpis.aht.toFixed(1)+' min',st.aht||'neutral')}
+      ${cell('tph',kpis.tph.toFixed(1),st.tph)}
+      ${cell('onlineH',avgOH.toFixed(1)+'H',ohS)}
+      ${cell('servingRate',(kpis.servingRate*100).toFixed(1)+'%',st.servingRate||'neutral')}
+      ${cell('s30s1',(kpis.s30s1*100).toFixed(1)+'%',st.s30s1)}
+      ${cell('s30s2',(kpis.s30s2*100).toFixed(2)+'%',st.s30s2)}
+      ${cell('missRate',(kpis.missRate*100).toFixed(2)+'%',st.missRate)}
+      <td class="vn">${kpis.served.toLocaleString('es-CO')}</td>
+      <td><span class="badge bg-${overall}">${stLbl}</span></td>
+    </tr>`;
+  }).join('');
+}
+function sortTable(k){if(sortKey===k)sortAsc=!sortAsc;else{sortKey=k;sortAsc=false;}renderTable();}
+
+// ====== INSIGHTS ======
+function renderInsights(){
+  const data=filteredData();
+  const kpis=calcKPIs(data);
+  if(!kpis) return;
+  const st=statusOf(kpis);
+
+  const ams=DB.agents.map(ag=>{
+    const recs=data.filter(r=>r.ulp===ag.ulp);
+    if(!recs.length) return null;
+    const k=calcKPIs(recs);
+    const s=statusOf(k);
+    const score=Object.entries(s).filter(([key,v])=>KPIS.find(x=>x.key===key)?.goal&&v==='good').length;
+    const avgOH=k.onlineH/Math.max(1,recs.length);
+    return{ag,kpis:k,st:s,score,avgOH};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score);
+
+  // Real interval insights
+  const ivsCOL=getIntervals().filter(iv=>iv.volume>0);
+  const peakHour=ivsCOL.reduce((a,b)=>b.volume>a.volume?b:a,ivsCOL[0]);
+  const lowHour=ivsCOL.reduce((a,b)=>b.volume<a.volume?b:a,ivsCOL[0]);
+  const dsatPeakH=ivsCOL.reduce((a,b)=>b.dsat>a.dsat?b:a,ivsCOL[0]);
+  const s30s1LowH=ivsCOL.filter(iv=>iv.s30s1>0).reduce((a,b)=>b.s30s1<a.s30s1?b:a,ivsCOL[0]);
+
+  const alerts=[];
+  if(st.dsat==='bad') alerts.push({d:'r',t:`DSAT ${(kpis.dsat*100).toFixed(2)}% — supera meta 1.45%. Acción correctiva urgente.`});
+  if(st.missRate==='bad') alerts.push({d:'r',t:`Miss Rate ${(kpis.missRate*100).toFixed(2)}% — sobre meta 1%. Verificar dotación.`});
+  if(st.s30s1==='bad') alerts.push({d:'r',t:`30s1 ${(kpis.s30s1*100).toFixed(1)}% — bajo meta 95%. SLA Shein comprometido.`});
+  if(st.s30s2==='bad') alerts.push({d:'r',t:`30s2 ${(kpis.s30s2*100).toFixed(2)}% — bajo meta 99%. SLA global en riesgo.`});
+  if(st.tph==='bad') alerts.push({d:'y',t:`TPH ${kpis.tph.toFixed(1)} — bajo meta 17. Revisar AHT e idle.`});
+  if(st.dsat==='warn') alerts.push({d:'y',t:`DSAT ${(kpis.dsat*100).toFixed(2)}% — zona de alerta. Monitoreo preventivo.`});
+  if(st.s30s1==='warn') alerts.push({d:'y',t:`30s1 ${(kpis.s30s1*100).toFixed(1)}% — cerca del límite. Reforzar adherencia.`});
+  if(!alerts.length) alerts.push({d:'g',t:'Todos los KPIs con meta dentro del umbral. ¡Buen desempeño operativo!'});
+
+  const topBtm=[
+    ...ams.slice(0,3).map((a,i)=>({d:'g',t:`🏆 #${i+1} ${a.ag.name} — ${a.score} metas ✓ · DSAT: ${(a.kpis.dsat*100).toFixed(2)}% · TPH: ${a.kpis.tph.toFixed(1)}`})),
+    ...ams.slice(-3).reverse().map((a,i)=>({d:'r',t:`⚠ Bottom ${i+1}: ${a.ag.name} — ${a.score} metas ✓ · DSAT: ${(a.kpis.dsat*100).toFixed(2)}% · TPH: ${a.kpis.tph.toFixed(1)}`})),
+  ];
+
+  const traffic=[
+    {d:'b',t:`Peak de tráfico: ${peakHour.colLabel} COT (🇨🇳 ${peakHour.label} CST) — ${peakHour.volume.toLocaleString('es-CO')} chats. Máxima cobertura requerida.`},
+    {d:'y',t:`Valle operativo: ${lowHour.colLabel} COT (🇨🇳 ${lowHour.label} CST) — ${lowHour.volume.toLocaleString('es-CO')} chats. Ideal para coaching y calibraciones.`},
+    {d:'r',t:`Mayor DSAT: ${dsatPeakH.colLabel} COT (🇨🇳 ${dsatPeakH.label} CST) con ${dsatPeakH.dsat.toFixed(2)}% — concentrar supervisión en este bloque.`},
+    {d:'p',t:`30s1 más bajo: ${s30s1LowH.colLabel} COT (🇨🇳 ${s30s1LowH.label} CST) con ${s30s1LowH.s30s1.toFixed(1)}% — verificar staffing y adherencia.`},
+    {d:'b',t:`Operación real: 10:00–22:00 COT (Hora Colombia). Los datos originales del sistema Shein están en UTC+8 (China). Conversión: −13H.`},
+  ];
+
+  const lowOH=ams.filter(a=>a.avgOH<6.5);
+  const hiDSAT=ams.filter(a=>a.kpis.dsat>.0145);
+  const low30s1=ams.filter(a=>a.kpis.s30s1<.95);
+  const hiMiss=ams.filter(a=>a.kpis.missRate>.01);
+  const lowTPH=ams.filter(a=>a.kpis.tph<17);
+  const recs=[];
+  if(hiDSAT.length) recs.push({d:'r',t:`Coaching urgente: ${hiDSAT.map(a=>a.ag.name).join(', ')} — DSAT sobre meta. Calibración y revisión de scripts.`});
+  if(low30s1.length) recs.push({d:'r',t:`${low30s1.map(a=>a.ag.name).join(', ')} con 30s1 bajo 95%. Alertas de tiempo de respuesta en tiempo real.`});
+  if(lowOH.length) recs.push({d:'y',t:`Bajo tiempo en línea: ${lowOH.map(a=>a.ag.name).join(', ')} — Ø ${lowOH[0].avgOH.toFixed(1)}H/día. Verificar adherencia al schedule (meta: 6.5H).`});
+  if(lowTPH.length) recs.push({d:'y',t:`TPH bajo meta: ${lowTPH.map(a=>a.ag.name).join(', ')}. Revisar AHT, idle y distribución de carga.`});
+  if(hiMiss.length) recs.push({d:'y',t:`Miss Rate elevado: ${hiMiss.map(a=>a.ag.name).join(', ')}. Verificar disponibilidad y adherencia.`});
+  recs.push({d:'g',t:`Referentes a destacar: ${ams.slice(0,2).map(a=>a.ag.name).join(' y ')}. Usar para sesiones de best practices.`});
+
+  const trends=[
+    {d:st.dsat==='good'?'g':'r',t:`DSAT: ${(kpis.dsat*100).toFixed(2)}% ${st.dsat==='good'?'✓ bajo meta':'✗ sobre meta — riesgo contractual Shein'}`},
+    {d:st.tph==='good'?'g':st.tph==='warn'?'y':'r',t:`Productividad: TPH ${kpis.tph.toFixed(1)} ${st.tph==='good'?'✓ en meta':'— por debajo, impacto en eficiencia operativa'}`},
+    {d:st.s30s1==='good'?'g':'r',t:`30s1: ${(kpis.s30s1*100).toFixed(1)}% · 30s2: ${(kpis.s30s2*100).toFixed(2)}% — SLA ${st.s30s1==='good'&&st.s30s2==='good'?'OK ✓':'en revisión ✗'}`},
+    {d:st.missRate==='good'?'g':'r',t:`Miss Rate: ${(kpis.missRate*100).toFixed(2)}% ${st.missRate==='good'?'✓ bajo control':'✗ excede meta — analizar staffing'}`},
+    {d:'b',t:`AHT Ø: ${kpis.aht.toFixed(1)} min · Serving Rate: ${(kpis.servingRate*100).toFixed(1)}% · ${kpis.served.toLocaleString('es-CO')} chats atendidos`},
+  ];
+
+  const agOH=ams.map(a=>({name:a.ag.name,h:a.avgOH}));
+  const ohOk=agOH.filter(a=>a.h>=6.5).length;
+  const sla=[
+    {d:'b',t:`Chats atendidos: ${kpis.served.toLocaleString('es-CO')} · Bad chats: ${kpis.bad.toLocaleString('es-CO')} · Missed: ${kpis.missed.toLocaleString('es-CO')}`},
+    {d:kpis.bad>100?'r':'y',t:`DSAT acumulado: ${kpis.bad.toLocaleString('es-CO')} chats malos. Riesgo CSAT y continuidad contrato Shein.`},
+    {d:'b',t:`Online Time: ${ohOk}/${ams.length} asesores cumplen meta diaria de 6.5H en el período.`},
+    {d:st.missRate==='good'?'g':'r',t:`Missed Engagements: ${kpis.missed.toLocaleString('es-CO')} — Miss Rate ${(kpis.missRate*100).toFixed(2)}% ${st.missRate==='good'?'✓ controlado':'✗ requiere acción'}`},
+  ];
+
+  function icard(title,ico,items){
+    return`<div class="icard">
+      <div class="ihdr"><span class="iico">${ico}</span><span class="ititle">${title}</span></div>
+      ${items.slice(0,5).map(x=>`<div class="iitem"><div class="idot id-${x.d}"></div><div>${x.t}</div></div>`).join('')}
+    </div>`;
+  }
+  document.getElementById('ins-grid').innerHTML=[
+    icard('Alertas de Performance','🚨',alerts),
+    icard('Top & Bottom Asesores','🏆',topBtm),
+    icard('Tendencia de Tráfico Real','📈',traffic),
+    icard('Recomendaciones Accionables','💡',recs),
+    icard('Tendencias Clave','📊',trends),
+    icard('SLA & Tiempo en Línea','📋',sla),
+  ].join('');
+}
+
+// ====== RENDER ALL ======
+function renderAll(){
+  renderKPICards();
+  renderOnlineTime();
+  renderTrendChart();
+  renderAgentBar();
+  renderIntervalChart();
+  renderHeatmap();
+  renderTable();
+  renderInsights();
+}
+
+// ====== THEME TOGGLE ======
+function toggleTheme(){
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('theme-btn').textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+}
+function applyStoredTheme(){
+  const t = localStorage.getItem('theme');
+  if(t === 'light'){
+    document.body.classList.add('light');
+    const btn = document.getElementById('theme-btn');
+    if(btn) btn.textContent = '☀️';
+  }
+}
+
+function updateClock(){
+  const n=new Date();
+  document.getElementById('ts-now').textContent=
+    n.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+
+    ' · '+n.toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'});
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  applyStoredTheme();
+  updateClock(); setInterval(updateClock,1000);
+  loadGHConfig();
+  await loadData();
+  initDropdowns(); setView('mes'); initTrendBtns(); initHMBtns(); renderAll();
+});
+
+// ══════════════════════════════════════════════════════════
+// UPLOAD MODAL
+// ══════════════════════════════════════════════════════════
+let PENDING_DATA = null;
+
+function openUploadModal(){
+  document.getElementById('upload-modal').style.display='flex';
+  document.getElementById('upload-file').value='';
+  document.getElementById('merge-preview-box').style.display='none';
+  document.getElementById('upload-status').textContent='';
+  document.getElementById('btn-commit').disabled=true;
+  document.getElementById('prog-fill').style.width='0%';
+  PENDING_DATA=null;
+}
+function closeUploadModal(){
+  document.getElementById('upload-modal').style.display='none';
+}
+
+// ── XLSX preview & client-side processing ──
+async function previewFile(input){
+  const file = input.files[0];
+  if(!file) return;
+  setStatus('info','⏳ Leyendo archivo...');
+  setProgress(15);
+  try{
+    const buf = await file.arrayBuffer();
+    const wb  = XLSX.read(buf, {type:'array', cellDates:true});
+
+    // Expect sheet named 'sheet1' or first sheet
+    const shName = wb.SheetNames.includes('sheet1') ? 'sheet1' : wb.SheetNames[0];
+    const rows   = XLSX.utils.sheet_to_json(wb.Sheets[shName], {defval:0});
+    setProgress(35);
+
+    if(!rows.length) throw new Error('El archivo está vacío o no tiene datos.');
+
+    // Validate expected columns
+    const sample = rows[0];
+    const required = ['Date','Hour','ULP Account','Served chats','Assigned&Replied Chat',
+                      'Engagement duration（min）','Bad chats','Online Time（H）','Serving Time（H）',
+                      'is30s1ServedID','not30s1ServedID','Missed Engagements',
+                      '30s2 Served Engagements','Non-30s2 Served Engagements'];
+    const missing = required.filter(c=>!(c in sample));
+    if(missing.length) throw new Error(`Columnas faltantes: ${missing.join(', ')}`);
+
+    setProgress(50);
+    PENDING_DATA = processXLSX(rows);
+    setProgress(75);
+
+    showMergePreview(PENDING_DATA);
+    setStatus('ok', `✓ Archivo procesado: ${PENDING_DATA.newDailyCount} registros diarios nuevos/actualizados`);
+    document.getElementById('btn-commit').disabled = false;
+    setProgress(100);
+  } catch(e){
+    setStatus('err','✗ Error: '+e.message);
+    setProgress(0);
+    document.getElementById('btn-commit').disabled=true;
+  }
+}
+
+// ── Core processing: XLSX rows → {daily, iv} in Colombia time ──
+function processXLSX(rows){
+  const agentULPs = new Set(DB.agents.map(a=>a.ulp));
+
+  // Filter to known agents
+  const filtered = rows.filter(r=>{
+    const ulp = String(r['ULP Account']||'').trim();
+    return agentULPs.has(ulp);
+  });
+
+  if(!filtered.length) throw new Error('Ningún agente del archivo coincide con la lista de asesores registrados.');
+
+  // Compute Colombia date (China hour < 13 → previous day)
+  function colDate(dateVal, hour){
+    let d;
+    if(dateVal instanceof Date) d = dateVal;
+    else if(typeof dateVal === 'number'){
+      // Excel serial date
+      d = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
+    } else {
+      d = new Date(dateVal);
+    }
+    const base = d.toISOString().slice(0,10);
+    if(+hour < 13){
+      const prev = new Date(d); prev.setDate(prev.getDate()-1);
+      return prev.toISOString().slice(0,10);
+    }
+    return base;
+  }
+  function colHour(h){ return ((+h - 13 + 24) % 24); }
+
+  const n = v => isNaN(+v) ? 0 : +v;
+
+  // Daily aggregation by col_date + ULP
+  const dailyMap = {};
+  filtered.forEach(r=>{
+    const ulp  = String(r['ULP Account']).trim();
+    const cd   = colDate(r['Date'], r['Hour']);
+    const key  = `${cd}||${ulp}`;
+    if(!dailyMap[key]) dailyMap[key]={
+      date:cd, ulp, name: DB.agents.find(a=>a.ulp===ulp)?.name||ulp,
+      s:0,ar:0,b:0,eng:0,oh:0,sh:0,s1:0,n1:0,miss:0,t2:0,n2:0
+    };
+    const x = dailyMap[key];
+    x.s   += n(r['Served chats']);
+    x.ar  += n(r['Assigned&Replied Chat']);
+    x.b   += n(r['Bad chats']);
+    x.eng += n(r['Engagement duration（min）']);
+    x.oh  += n(r['Online Time（H）']);
+    x.sh  += n(r['Serving Time（H）']);
+    x.s1  += n(r['is30s1ServedID']);
+    x.n1  += n(r['not30s1ServedID']);
+    x.miss+= n(r['Missed Engagements']);
+    x.t2  += n(r['30s2 Served Engagements']);
+    x.n2  += n(r['Non-30s2 Served Engagements']);
+  });
+
+  const newDaily = Object.values(dailyMap)
+    .filter(x=>x.s>0)
+    .map(x=>({
+      date: x.date, ulp: x.ulp, name: x.name,
+      dsat:  x.s>0 ? +(x.b/x.s).toFixed(6) : 0,
+      aht:   x.s>0 ? +(x.eng/x.s).toFixed(4) : 0,
+      tph:   x.oh>0? +(x.s/x.oh).toFixed(4) : 0,
+      servingRate: x.oh>0? +(x.sh/x.oh).toFixed(4):0,
+      s30s1: (x.s1+x.n1)>0? +(x.s1/(x.s1+x.n1)).toFixed(4):0,
+      s30s2: (x.t2+x.n2+x.miss)>0? +(x.t2/(x.t2+x.n2+x.miss)).toFixed(4):0,
+      missRate: (x.miss+x.s)>0? +(x.miss/(x.miss+x.s)).toFixed(4):0,
+      onlineH: +x.oh.toFixed(4),
+      served: Math.round(x.s),
+      assignedReplied: Math.round(x.ar),
+      bad: Math.round(x.b), missed: Math.round(x.miss),
+    }));
+
+  // Interval aggregation by col_date + col_hour
+  const ivMap = {};
+  filtered.forEach(r=>{
+    const cd  = colDate(r['Date'], r['Hour']);
+    const ch  = colHour(r['Hour']);
+    const key = `${cd}||${ch}`;
+    if(!ivMap[key]) ivMap[key]={d:cd,h:ch,s:0,oh:0,b:0,eng:0,s1:0,n1:0,miss:0,t2:0,n2:0};
+    const x=ivMap[key];
+    x.s   +=n(r['Served chats']);
+    x.oh  +=n(r['Online Time（H）']);
+    x.b   +=n(r['Bad chats']);
+    x.eng +=n(r['Engagement duration（min）']);
+    x.s1  +=n(r['is30s1ServedID']);
+    x.n1  +=n(r['not30s1ServedID']);
+    x.miss+=n(r['Missed Engagements']);
+    x.t2  +=n(r['30s2 Served Engagements']);
+    x.n2  +=n(r['Non-30s2 Served Engagements']);
+  });
+
+  const newIV = Object.values(ivMap)
+    .filter(x=>x.s>0||x.oh>0)
+    .map(x=>({
+      d:x.d, h:x.h,
+      s:Math.round(x.s), oh:+x.oh.toFixed(3),
+      b:Math.round(x.b), eng:+x.eng.toFixed(2),
+      s1:Math.round(x.s1), n1:Math.round(x.n1),
+      miss:Math.round(x.miss), t2:Math.round(x.t2), n2:Math.round(x.n2),
+    }));
+
+  return { newDaily, newIV, newDailyCount: newDaily.length };
+}
+
+// ── Merge new data with existing DB ──
+function mergeData(existing, incoming){
+  // Daily: key = date||ulp → new data wins for same key
+  const dailyMap = {};
+  existing.daily.forEach(r => { dailyMap[`${r.date}||${r.ulp}`] = r; });
+  incoming.newDaily.forEach(r => { dailyMap[`${r.date}||${r.ulp}`] = r; }); // overwrite/add
+
+  // IV: key = d||h → new data wins for same key
+  const ivMap = {};
+  existing.iv.forEach(r => { ivMap[`${r.d}||${r.h}`] = r; });
+  incoming.newIV.forEach(r => { ivMap[`${r.d}||${r.h}`] = r; });
+
+  const daily  = Object.values(dailyMap).sort((a,b)=>a.date<b.date?-1:1);
+  const iv     = Object.values(ivMap).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:a.h-b.h);
+  const dates  = [...new Set(daily.map(r=>r.date))].sort();
+  const months = [...new Set(dates.map(d=>d.slice(0,7)))].sort();
+
+  return { agents: existing.agents, daily, iv, dates, months };
+}
+
+// ── Preview before commit ──
+function showMergePreview(incoming){
+  const newDates = [...new Set(incoming.newDaily.map(r=>r.date))].sort();
+  const existDates = new Set(DB.dates);
+  const brandNew = newDates.filter(d=>!existDates.has(d));
+  const updated  = newDates.filter(d=>existDates.has(d));
+  const kept     = DB.dates.filter(d=>!newDates.includes(d));
+
+  const box = document.getElementById('merge-preview-box');
+  box.style.display='block';
+  box.innerHTML=`<div class="merge-preview">
+    <div class="mp-row"><span class="mp-label">Fechas Colombia nuevas:</span>
+      <span class="mp-new">${brandNew.length>0?brandNew.join(', '):'Ninguna (todo ya existe)'}</span></div>
+    <div class="mp-row"><span class="mp-label">Fechas actualizadas:</span>
+      <span class="mp-val">${updated.length}</span></div>
+    <div class="mp-row"><span class="mp-label">Fechas históricas preservadas:</span>
+      <span class="mp-kept">${kept.length} fechas intactas</span></div>
+    <div class="mp-row"><span class="mp-label">Registros diarios a cargar:</span>
+      <span class="mp-val">${incoming.newDaily.length}</span></div>
+    <div class="mp-row"><span class="mp-label">Intervalos a cargar:</span>
+      <span class="mp-val">${incoming.newIV.length}</span></div>
+  </div>`;
+}
+
+// ── Commit merged data.json to GitHub ──
+async function commitToGitHub(){
+  const cfg = getGHConfig();
+  if(!cfg.user||!cfg.repo||!cfg.token){
+    setStatus('err','✗ Completa la configuración GitHub (usuario, repositorio y token).');
+    return;
+  }
+
+  const btn = document.getElementById('btn-commit');
+  btn.disabled=true;
+  setProgress(10);
+
+  try{
+    // 1. Merge data
+    setStatus('info','⏳ Fusionando datos...');
+    const merged = mergeData(DB, PENDING_DATA);
+    setProgress(25);
+
+    // 2. Get current file SHA (required by GitHub API for updates)
+    setStatus('info','⏳ Conectando a GitHub...');
+    const apiBase = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/data.json`;
+    const headers = {
+      'Authorization': `token ${cfg.token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    };
+
+    let sha = null;
+    const getResp = await fetch(`${apiBase}?ref=${cfg.branch||'main'}`, {headers});
+    if(getResp.ok){
+      const meta = await getResp.json();
+      sha = meta.sha;
+    } else if(getResp.status !== 404){
+      throw new Error(`GitHub API error ${getResp.status}: ${await getResp.text()}`);
+    }
+    setProgress(45);
+
+    // 3. Encode merged JSON as base64
+    setStatus('info','⏳ Preparando datos...');
+    const jsonStr  = JSON.stringify(merged, null, 2);
+    const b64      = btoa(unescape(encodeURIComponent(jsonStr)));
+    setProgress(60);
+
+    // 4. Commit via GitHub API
+    setStatus('info','⏳ Publicando en GitHub...');
+    const newDates = [...new Set(PENDING_DATA.newDaily.map(r=>r.date))].sort();
+    const body = {
+      message: `[dashboard] Actualización de datos — ${newDates.join(', ')}`,
+      content: b64,
+      branch: cfg.branch||'main',
+    };
+    if(sha) body.sha = sha;
+
+    const putResp = await fetch(apiBase, {method:'PUT', headers, body:JSON.stringify(body)});
+    setProgress(85);
+
+    if(!putResp.ok){
+      const err = await putResp.json();
+      throw new Error(err.message || `HTTP ${putResp.status}`);
+    }
+    setProgress(100);
+
+    // 5. Update local DB in memory so dashboard reflects changes immediately
+    DB = merged;
+    setStatus('ok', `✓ Datos publicados correctamente. ${merged.dates.length} fechas · ${merged.daily.length} registros totales.`);
+
+    // Refresh dashboard
+    setTimeout(()=>{
+      initDropdowns();
+      renderAll();
+      setTimeout(closeUploadModal, 1800);
+    }, 600);
+
+  } catch(e){
+    setStatus('err','✗ Error al publicar: '+e.message);
+    setProgress(0);
+    btn.disabled=false;
+  }
+}
+
+function setStatus(type, msg){
+  const el = document.getElementById('upload-status');
+  el.className = 'mstatus '+type;
+  el.textContent = msg;
+}
+function setProgress(pct){
+  document.getElementById('prog-fill').style.width = pct+'%';
+}
+
+</script>
+
+<!-- ── UPLOAD FAB ── -->
+<button class="upload-fab" onclick="openUploadModal()">⬆ Actualizar Datos</button>
+
+<!-- ── UPLOAD / GITHUB CONFIG MODAL ── -->
+<div class="modal-overlay" id="upload-modal" style="display:none">
+  <div class="modal">
+    <h2>📤 ACTUALIZAR DATOS</h2>
+    <p>Carga un archivo XLSX exportado del sistema Shein.<br>Los datos nuevos se fusionarán con el historial existente sin borrar registros previos.</p>
+
+    <div class="mfield">
+      <label>Archivo XLSX</label>
+      <input type="file" id="upload-file" accept=".xlsx,.xls" onchange="previewFile(this)">
+    </div>
+
+    <div id="merge-preview-box" style="display:none"></div>
+
+    <details style="margin-bottom:14px;">
+      <summary style="font-size:9px;color:var(--t3);font-family:var(--mono);cursor:pointer;letter-spacing:1px;text-transform:uppercase;">⚙ Configuración GitHub</summary>
+      <div style="margin-top:10px;">
+        <div class="mfield">
+          <label>Usuario GitHub</label>
+          <input type="text" id="gh-user" placeholder="tu-usuario" oninput="saveGHConfig()">
+        </div>
+        <div class="mfield">
+          <label>Repositorio</label>
+          <input type="text" id="gh-repo" placeholder="shein-dashboard" oninput="saveGHConfig()">
+        </div>
+        <div class="mfield">
+          <label>Rama</label>
+          <input type="text" id="gh-branch" placeholder="main" oninput="saveGHConfig()">
+        </div>
+        <div class="mfield">
+          <label>Personal Access Token (PAT)</label>
+          <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" oninput="saveGHConfig()">
+          <div class="token-note">
+            Generar en GitHub → Settings → Developer Settings → Personal access tokens → Fine-grained tokens<br>
+            Permisos necesarios: <strong>Contents: Read and Write</strong><br>
+            El token se guarda solo en tu navegador (localStorage), nunca se envía a terceros.
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+    <div class="mstatus" id="upload-status"></div>
+
+    <div class="mbtn-row">
+      <button class="mbtn mbtn-cancel" onclick="closeUploadModal()">Cancelar</button>
+      <button class="mbtn mbtn-primary" id="btn-commit" onclick="commitToGitHub()" disabled>Publicar Datos</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
