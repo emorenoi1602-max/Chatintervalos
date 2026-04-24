@@ -1225,6 +1225,30 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   initDropdowns(); setView('mes'); initTrendBtns(); initHMBtns(); renderAll();
 });
 
+// ── Global name helpers ──
+const PREPS = new Set(['de','del','la','los','las','el','y','e']);
+
+function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
+
+function fmtName(full){
+  const parts = full.trim().replace(/\s+/g,' ').split(' ').filter(Boolean);
+  if(!parts.length) return '';
+  const fname = cap(parts[0]);
+  let i = 1;
+  while(i < parts.length && (i === 1 || PREPS.has(parts[i].toLowerCase()))) i++;
+  const lname = i < parts.length ? cap(parts[i]) : '';
+  return (fname + (lname ? ' '+lname : '')).trim();
+}
+
+function extractAgentName(agentNameStr, ulp){
+  // Format: MX-ATLCOLBAQ60-NOMBRE COMPLETO-Colombia
+  let name = String(agentNameStr||'')
+    .replace(new RegExp('^MX-' + ulp + '-', 'i'), '')
+    .replace(/-Colombia$/i, '')
+    .trim();
+  return name ? fmtName(name) : ulp;
+}
+
 // ══════════════════════════════════════════════════════════
 // UPLOAD MODAL
 // ══════════════════════════════════════════════════════════
@@ -1282,29 +1306,6 @@ async function previewFile(input){
     setProgress(0);
     document.getElementById('btn-commit').disabled=true;
   }
-}
-
-// ── Name helpers ──
-const PREPS = new Set(['de','del','la','los','las','el','y','e']);
-
-function fmtName(full){
-  const parts = full.trim().replace(/\s+/g,' ').split(' ').filter(Boolean);
-  if(!parts.length) return '';
-  const fname = cap(parts[0]);
-  let i = 1;
-  while(i < parts.length && (i === 1 || PREPS.has(parts[i].toLowerCase()))) i++;
-  const lname = i < parts.length ? cap(parts[i]) : '';
-  return (fname + (lname ? ' '+lname : '')).trim();
-}
-function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
-
-function extractAgentName(agentNameStr, ulp){
-  // Format: MX-ATLCOLBAQ60-DAYANA PAOLA DIAZ MEJIA-Colombia
-  let name = String(agentNameStr||'')
-    .replace(new RegExp('^MX-' + ulp + '-', 'i'), '')
-    .replace(/-Colombia$/i, '')
-    .trim();
-  return name ? fmtName(name) : ulp;
 }
 
 // ── Core processing: XLSX rows → {daily, iv, agents} in Colombia time ──
