@@ -1284,17 +1284,46 @@ async function previewFile(input){
   }
 }
 
-// ── Core processing: XLSX rows → {daily, iv} in Colombia time ──
-function processXLSX(rows){
-  const agentULPs = new Set(DB.agents.map(a=>a.ulp));
+// ── Name helpers ──
+const PREPS = new Set(['de','del','la','los','las','el','y','e']);
 
-  // Filter to known agents
-  const filtered = rows.filter(r=>{
+function fmtName(full){
+  const parts = full.trim().replace(/\s+/g,' ').split(' ').filter(Boolean);
+  if(!parts.length) return '';
+  const fname = cap(parts[0]);
+  let i = 1;
+  while(i < parts.length && (i === 1 || PREPS.has(parts[i].toLowerCase()))) i++;
+  const lname = i < parts.length ? cap(parts[i]) : '';
+  return (fname + (lname ? ' '+lname : '')).trim();
+}
+function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
+
+function extractAgentName(agentNameStr, ulp){
+  // Format: MX-ATLCOLBAQ60-DAYANA PAOLA DIAZ MEJIA-Colombia
+  let name = String(agentNameStr||'')
+    .replace(new RegExp('^MX-' + ulp + '-', 'i'), '')
+    .replace(/-Colombia$/i, '')
+    .trim();
+  return name ? fmtName(name) : ulp;
+}
+
+// ── Core processing: XLSX rows → {daily, iv, agents} in Colombia time ──
+function processXLSX(rows){
+  // Build agent map from ALL agents in file (not just pre-registered ones)
+  const agentMap = {};  // ulp → name
+  rows.forEach(r=>{
     const ulp = String(r['ULP Account']||'').trim();
-    return agentULPs.has(ulp);
+    if(!ulp || agentMap[ulp]) return;
+    agentMap[ulp] = extractAgentName(r['Agent Name']||'', ulp);
   });
 
-  if(!filtered.length) throw new Error('Ningún agente del archivo coincide con la lista de asesores registrados.');
+  // Filter rows that have any activity
+  const filtered = rows.filter(r=>{
+    const ulp = String(r['ULP Account']||'').trim();
+    return ulp && agentMap[ulp];
+  });
+
+  if(!filtered.length) throw new Error('El archivo no contiene datos de agentes reconocibles.');
 
   // Compute Colombia date (China hour < 13 → previous day)
   function colDate(dateVal, hour){
@@ -1324,7 +1353,7 @@ function processXLSX(rows){
     const cd   = colDate(r['Date'], r['Hour']);
     const key  = `${cd}||${ulp}`;
     if(!dailyMap[key]) dailyMap[key]={
-      date:cd, ulp, name: DB.agents.find(a=>a.ulp===ulp)?.name||ulp,
+      date:cd, ulp, name: agentMap[ulp] || ulp,
       s:0,ar:0,b:0,eng:0,oh:0,sh:0,s1:0,n1:0,miss:0,t2:0,n2:0
     };
     const x = dailyMap[key];
@@ -1387,15 +1416,29 @@ function processXLSX(rows){
       miss:Math.round(x.miss), t2:Math.round(x.t2), n2:Math.round(x.n2),
     }));
 
-  return { newDaily, newIV, newDailyCount: newDaily.length };
+  // Build new agents list (ALL agents found in this file)
+  const newAgents = Object.entries(agentMap).map(([ulp,name])=>({ulp,name}))
+    .sort((a,b)=>a.name.localeCompare(b.name));
+
+  return { newDaily, newIV, newAgents, newDailyCount: newDaily.length };
 }
 
 // ── Merge new data with existing DB ──
 function mergeData(existing, incoming){
+  // Agents: existing kept, new ones added (existing names preserved if already known)
+  const agentMap = {};
+  existing.agents.forEach(a => { agentMap[a.ulp] = a.name; });
+  incoming.newAgents.forEach(a => {
+    if(!agentMap[a.ulp]) agentMap[a.ulp] = a.name;  // only add truly new ones
+  });
+  const agents = Object.entries(agentMap)
+    .map(([ulp,name])=>({ulp,name}))
+    .sort((a,b)=>a.name.localeCompare(b.name));
+
   // Daily: key = date||ulp → new data wins for same key
   const dailyMap = {};
   existing.daily.forEach(r => { dailyMap[`${r.date}||${r.ulp}`] = r; });
-  incoming.newDaily.forEach(r => { dailyMap[`${r.date}||${r.ulp}`] = r; }); // overwrite/add
+  incoming.newDaily.forEach(r => { dailyMap[`${r.date}||${r.ulp}`] = r; });
 
   // IV: key = d||h → new data wins for same key
   const ivMap = {};
@@ -1407,16 +1450,20 @@ function mergeData(existing, incoming){
   const dates  = [...new Set(daily.map(r=>r.date))].sort();
   const months = [...new Set(dates.map(d=>d.slice(0,7)))].sort();
 
-  return { agents: existing.agents, daily, iv, dates, months };
+  return { agents, daily, iv, dates, months };
 }
 
 // ── Preview before commit ──
 function showMergePreview(incoming){
-  const newDates = [...new Set(incoming.newDaily.map(r=>r.date))].sort();
-  const existDates = new Set(DB.dates);
-  const brandNew = newDates.filter(d=>!existDates.has(d));
-  const updated  = newDates.filter(d=>existDates.has(d));
-  const kept     = DB.dates.filter(d=>!newDates.includes(d));
+  const newDates    = [...new Set(incoming.newDaily.map(r=>r.date))].sort();
+  const existDates  = new Set(DB.dates);
+  const brandNew    = newDates.filter(d=>!existDates.has(d));
+  const updated     = newDates.filter(d=>existDates.has(d));
+  const kept        = DB.dates.filter(d=>!newDates.includes(d));
+
+  const existULPs   = new Set(DB.agents.map(a=>a.ulp));
+  const newAgents   = incoming.newAgents.filter(a=>!existULPs.has(a.ulp));
+  const totalAgents = new Set([...DB.agents.map(a=>a.ulp), ...incoming.newAgents.map(a=>a.ulp)]).size;
 
   const box = document.getElementById('merge-preview-box');
   box.style.display='block';
@@ -1431,6 +1478,13 @@ function showMergePreview(incoming){
       <span class="mp-val">${incoming.newDaily.length}</span></div>
     <div class="mp-row"><span class="mp-label">Intervalos a cargar:</span>
       <span class="mp-val">${incoming.newIV.length}</span></div>
+    <div class="mp-row"><span class="mp-label">Asesores en archivo:</span>
+      <span class="mp-val">${incoming.newAgents.length} detectados → ${totalAgents} total tras fusión</span></div>
+    ${newAgents.length ? `<div class="mp-row" style="flex-direction:column;gap:3px;">
+      <span class="mp-label">🆕 Nuevos asesores detectados (${newAgents.length}):</span>
+      <span class="mp-new" style="font-size:10px;">${newAgents.map(a=>`${a.name} (${a.ulp})`).join(' · ')}</span>
+    </div>` : `<div class="mp-row"><span class="mp-label">Nuevos asesores:</span>
+      <span class="mp-kept">Ninguno — todos ya registrados</span></div>`}
   </div>`;
 }
 
