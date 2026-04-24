@@ -462,7 +462,7 @@ function getGHConfig(){
 }
 
 // ── DB (loaded async from GitHub or embedded fallback) ──
-let DB = null;
+var DB = null;
 
 async function loadData(){
   const cfg = getGHConfig();
@@ -576,9 +576,9 @@ function statusOf(kpis){
 }
 
 // ====== STATE ======
-let ST={view:'mes',month:DB.months[DB.months.length-1],semana:'all',dia:'all',asesor:'all',trendKPI:'tph',hmKPI:'tph'};
-let CHARTS={};
-let sortKey='tph',sortAsc=false;
+var ST={view:'mes',month:DB.months[DB.months.length-1],semana:'all',dia:'all',asesor:'all',trendKPI:'tph',hmKPI:'tph'};
+var CHARTS={};
+var sortKey='tph',sortAsc=false;
 
 // ====== FILTER ======
 function filteredData(){
@@ -864,7 +864,7 @@ function renderAgentBar(){
 
 // ====== INTERVAL CHART (REAL DATA) ======
 // ====== TIMEZONE ======
-let TZ_MODE='CO'; // 'CO' = Colombia (default) | 'CN' = China label view
+var TZ_MODE='CO'; // 'CO' = Colombia (default) | 'CN' = China label view
 // NOTE: DB.iv hours are already in Colombia time. These helpers are for display labels only.
 function cnToCol(h){return(h-13+24)%24;}  // kept for legacy refs
 function colToCn(h){return(h+13)%24;}
@@ -1253,7 +1253,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 // ══════════════════════════════════════════════════════════
 // UPLOAD MODAL
 // ══════════════════════════════════════════════════════════
-let PENDING_DATA = null;
+var PENDING_DATA = null;
 
 function openUploadModal(){
   document.getElementById('upload-modal').style.display='flex';
@@ -1517,7 +1517,7 @@ async function commitToGitHub(){
       'Content-Type': 'application/json',
     };
 
-    let sha = null;
+    var sha = null;
     const getResp = await fetch(`${apiBase}?ref=${cfg.branch||'main'}`, {headers});
     if(getResp.ok){
       const meta = await getResp.json();
