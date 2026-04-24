@@ -576,7 +576,7 @@ function statusOf(kpis){
 }
 
 // ====== STATE ======
-var ST={view:'mes',month:DB.months[DB.months.length-1],semana:'all',dia:'all',asesor:'all',trendKPI:'tph',hmKPI:'tph'};
+var ST={view:'mes',month:null,semana:'all',dia:'all',asesor:'all',trendKPI:'tph',hmKPI:'tph'};
 var CHARTS={};
 var sortKey='tph',sortAsc=false;
 
@@ -1247,6 +1247,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   updateClock(); setInterval(updateClock,1000);
   loadGHConfig();
   await loadData();
+  // Now DB is loaded — safe to initialize month
+  ST.month = DB.months[DB.months.length-1];
   initDropdowns(); setView('mes'); initTrendBtns(); initHMBtns(); renderAll();
 });
 
