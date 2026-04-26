@@ -465,19 +465,34 @@ function getGHConfig(){
 var DB = null;
 
 async function loadData(){
-  const cfg = getGHConfig();
-  const branch = cfg.branch || 'main';
+  // 1. Always try relative ./data.json first (works on GitHub Pages for all visitors)
+  try{
+    var relResp = await fetch('./data.json?_=' + Date.now());
+    if(relResp.ok){
+      DB = await relResp.json();
+      console.log('✓ data.json loaded from relative path (GitHub Pages)');
+      return;
+    }
+  } catch(e){ console.warn('Relative fetch failed:', e.message); }
 
+  // 2. Try raw.githubusercontent.com using saved config (works for admin with token)
+  var cfg = getGHConfig();
+  var branch = cfg.branch || 'main';
   if(cfg.user && cfg.repo){
-    const url = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/${branch}/data.json?_=${Date.now()}`;
     try{
-      const r = await fetch(url);
-      if(r.ok){ DB = await r.json(); console.log('✓ data.json loaded from GitHub'); return; }
-    } catch(e){ console.warn('GitHub fetch failed, using embedded data'); }
+      var ghUrl = 'https://raw.githubusercontent.com/' + cfg.user + '/' + cfg.repo + '/' + branch + '/data.json?_=' + Date.now();
+      var ghResp = await fetch(ghUrl);
+      if(ghResp.ok){
+        DB = await ghResp.json();
+        console.log('✓ data.json loaded from raw.githubusercontent.com');
+        return;
+      }
+    } catch(e){ console.warn('GitHub raw fetch failed:', e.message); }
   }
-  // Fallback: embedded snapshot
+
+  // 3. Last resort: embedded snapshot (always available, may be outdated)
   DB = DB_EMBEDDED;
-  console.log('✓ Using embedded data snapshot');
+  console.warn('⚠ Using embedded data snapshot — may not be latest');
 }
 
 
