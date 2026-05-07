@@ -1469,10 +1469,11 @@ function processXLSX(rows){
   // Interval aggregation by col_date + col_hour
   const ivMap = {};
   filtered.forEach(r=>{
-    const cd  = colDate(r['Date'], r['Hour']);
-    const ch  = colHour(r['Hour']);
-    const key = `${cd}||${ch}||${ivMkt}`;
-    const ivMkt = (agentMap[ulp]&&agentMap[ulp].market)?agentMap[ulp].market:'MX';
+    const ulpIv  = String(r['ULP Account']||'').trim();
+    const cd     = colDate(r['Date'], r['Hour']);
+    const ch     = colHour(r['Hour']);
+    const ivMkt  = (agentMap[ulpIv]&&agentMap[ulpIv].market) ? agentMap[ulpIv].market : 'MX';
+    const key    = cd+'||'+ch+'||'+ivMkt;
     if(!ivMap[key]) ivMap[key]={d:cd,h:ch,market:ivMkt,s:0,oh:0,b:0,eng:0,s1:0,n1:0,miss:0,t2:0,n2:0};
     const x=ivMap[key];
     x.s   +=n(r['Served chats']);
