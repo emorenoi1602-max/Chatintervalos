@@ -1376,66 +1376,61 @@ async function previewFile(input){
 
 // ── Core processing: XLSX rows → {daily, iv, agents} in Colombia time ──
 function processXLSX(rows){
-  // Build agent map from ALL agents in file (not just pre-registered ones)
-  const agentMap = {};  // ulp → {name, market}
-  rows.forEach(r=>{
-    const ulp = String(r['ULP Account']||'').trim();
+  // Build agent map - detect market from Agent Name prefix
+  var agentMap = {};
+  rows.forEach(function(r){
+    var ulp = String(r['ULP Account']||'').trim();
     if(!ulp || agentMap[ulp]) return;
-    const agentNameRaw = String(r['Agent Name']||'');
-    // Detect market from Agent Name prefix (MX-... or US-...) or from existing DB agents
-    let market = 'MX'; // default
-    if(/^US-/i.test(agentNameRaw)) market = 'US';
-    else if(/^MX-/i.test(agentNameRaw)) market = 'MX';
+    var agentNameRaw = String(r['Agent Name']||'');
+    var mkt = 'MX';
+    if(/^US-/i.test(agentNameRaw)) mkt = 'US';
+    else if(/^MX-/i.test(agentNameRaw)) mkt = 'MX';
     else {
-      // Fall back to existing agent record if available
-      const existing = DB.agents.find(a=>a.ulp===ulp);
-      if(existing && existing.market) market = existing.market;
+      var ex = DB.agents.find(function(a){ return a.ulp===ulp; });
+      if(ex && ex.market) mkt = ex.market;
     }
-    agentMap[ulp] = { name: extractAgentName(agentNameRaw, ulp), market };
+    agentMap[ulp] = { name: extractAgentName(agentNameRaw, ulp), market: mkt };
   });
 
-  // Filter rows that have any activity
-  const filtered = rows.filter(r=>{
-    const ulp = String(r['ULP Account']||'').trim();
+  var filtered = rows.filter(function(r){
+    var ulp = String(r['ULP Account']||'').trim();
     return ulp && agentMap[ulp];
   });
 
   if(!filtered.length) throw new Error('El archivo no contiene datos de agentes reconocibles.');
 
-  // Compute Colombia date (China hour < 13 → previous day)
   function colDate(dateVal, hour){
-    let d;
+    var d;
     if(dateVal instanceof Date) d = dateVal;
     else if(typeof dateVal === 'number'){
-      // Excel serial date
       d = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
     } else {
       d = new Date(dateVal);
     }
-    const base = d.toISOString().slice(0,10);
+    var base = d.toISOString().slice(0,10);
     if(+hour < 13){
-      const prev = new Date(d); prev.setDate(prev.getDate()-1);
+      var prev = new Date(d); prev.setDate(prev.getDate()-1);
       return prev.toISOString().slice(0,10);
     }
     return base;
   }
   function colHour(h){ return ((+h - 13 + 24) % 24); }
+  function n(v){ return isNaN(+v) ? 0 : +v; }
 
-  const n = v => isNaN(+v) ? 0 : +v;
-
-  // Daily aggregation by col_date + ULP
-  const dailyMap = {};
-  filtered.forEach(r=>{
-    const ulp  = String(r['ULP Account']).trim();
-    const cd   = colDate(r['Date'], r['Hour']);
-    const key  = `${cd}||${ulp}`;
+  // Daily aggregation
+  var dailyMap = {};
+  filtered.forEach(function(r){
+    var ulp = String(r['ULP Account']).trim();
+    var cd  = colDate(r['Date'], r['Hour']);
+    var key = cd+'||'+ulp;
+    var inf = agentMap[ulp] || {};
     if(!dailyMap[key]) dailyMap[key]={
-      date:cd, ulp,
-      name:   (agentMap[ulp]&&agentMap[ulp].name)   ? agentMap[ulp].name   : (agentMap[ulp]||ulp),
-      market: (agentMap[ulp]&&agentMap[ulp].market) ? agentMap[ulp].market : 'MX',
+      date:cd, ulp:ulp,
+      name:   inf.name   || ulp,
+      market: inf.market || 'MX',
       s:0,ar:0,b:0,eng:0,oh:0,sh:0,s1:0,n1:0,miss:0,t2:0,n2:0
     };
-    const x = dailyMap[key];
+    var x = dailyMap[key];
     x.s   += n(r['Served chats']);
     x.ar  += n(r['Assigned&Replied Chat']);
     x.b   += n(r['Bad chats']);
@@ -1449,62 +1444,64 @@ function processXLSX(rows){
     x.n2  += n(r['Non-30s2 Served Engagements']);
   });
 
-  const newDaily = Object.values(dailyMap)
-    .filter(x=>x.s>0)
-    .map(x=>({
+  var newDaily = Object.values(dailyMap)
+    .filter(function(x){ return x.s>0; })
+    .map(function(x){ return {
       date: x.date, ulp: x.ulp, name: x.name, market: x.market||'MX',
-      dsat:  x.s>0 ? +(x.b/x.s).toFixed(6) : 0,
-      aht:   x.s>0 ? +(x.eng/x.s).toFixed(4) : 0,
-      tph:   x.oh>0? +(x.s/x.oh).toFixed(4) : 0,
-      servingRate: x.oh>0? +(x.sh/x.oh).toFixed(4):0,
-      s30s1: (x.s1+x.n1)>0? +(x.s1/(x.s1+x.n1)).toFixed(4):0,
-      s30s2: (x.t2+x.n2+x.miss)>0? +(x.t2/(x.t2+x.n2+x.miss)).toFixed(4):0,
-      missRate: (x.miss+x.s)>0? +(x.miss/(x.miss+x.s)).toFixed(4):0,
+      dsat:  x.s>0  ? +(x.b/x.s).toFixed(6)            : 0,
+      aht:   x.s>0  ? +(x.eng/x.s).toFixed(4)          : 0,
+      tph:   x.oh>0 ? +(x.s/x.oh).toFixed(4)           : 0,
+      servingRate: x.oh>0 ? +(x.sh/x.oh).toFixed(4)    : 0,
+      s30s1: (x.s1+x.n1)>0 ? +(x.s1/(x.s1+x.n1)).toFixed(4)               : 0,
+      s30s2: (x.t2+x.n2+x.miss)>0 ? +(x.t2/(x.t2+x.n2+x.miss)).toFixed(4): 0,
+      missRate: (x.miss+x.s)>0 ? +(x.miss/(x.miss+x.s)).toFixed(4)         : 0,
       onlineH: +x.oh.toFixed(4),
-      served: Math.round(x.s),
-      assignedReplied: Math.round(x.ar),
+      served: Math.round(x.s), assignedReplied: Math.round(x.ar),
       bad: Math.round(x.b), missed: Math.round(x.miss),
-    }));
+    }; });
 
-  // Interval aggregation by col_date + col_hour
-  const ivMap = {};
-  filtered.forEach(r=>{
-    const ulpIv  = String(r['ULP Account']||'').trim();
-    const cd     = colDate(r['Date'], r['Hour']);
-    const ch     = colHour(r['Hour']);
-    const ivMkt  = (agentMap[ulpIv]&&agentMap[ulpIv].market) ? agentMap[ulpIv].market : 'MX';
-    const key    = cd+'||'+ch+'||'+ivMkt;
-    if(!ivMap[key]) ivMap[key]={d:cd,h:ch,market:ivMkt,s:0,oh:0,b:0,eng:0,s1:0,n1:0,miss:0,t2:0,n2:0};
-    const x=ivMap[key];
-    x.s   +=n(r['Served chats']);
-    x.oh  +=n(r['Online Time（H）']);
-    x.b   +=n(r['Bad chats']);
-    x.eng +=n(r['Engagement duration（min）']);
-    x.s1  +=n(r['is30s1ServedID']);
-    x.n1  +=n(r['not30s1ServedID']);
-    x.miss+=n(r['Missed Engagements']);
-    x.t2  +=n(r['30s2 Served Engagements']);
-    x.n2  +=n(r['Non-30s2 Served Engagements']);
+  // Interval aggregation
+  var ivMap = {};
+  filtered.forEach(function(r){
+    var ulp  = String(r['ULP Account']||'').trim();
+    var inf  = agentMap[ulp] || {};
+    var mkt  = inf.market || 'MX';
+    var cd   = colDate(r['Date'], r['Hour']);
+    var ch   = colHour(r['Hour']);
+    var key  = cd+'||'+ch+'||'+mkt;
+    if(!ivMap[key]) ivMap[key]={d:cd,h:ch,market:mkt,s:0,oh:0,b:0,eng:0,s1:0,n1:0,miss:0,t2:0,n2:0};
+    var x = ivMap[key];
+    x.s   += n(r['Served chats']);
+    x.oh  += n(r['Online Time（H）']);
+    x.b   += n(r['Bad chats']);
+    x.eng += n(r['Engagement duration（min）']);
+    x.s1  += n(r['is30s1ServedID']);
+    x.n1  += n(r['not30s1ServedID']);
+    x.miss+= n(r['Missed Engagements']);
+    x.t2  += n(r['30s2 Served Engagements']);
+    x.n2  += n(r['Non-30s2 Served Engagements']);
   });
 
-  const newIV = Object.values(ivMap)
-    .filter(x=>x.s>0||x.oh>0)
-    .map(x=>({
-      d:x.d, h:x.h,
+  var newIV = Object.values(ivMap)
+    .filter(function(x){ return x.s>0||x.oh>0; })
+    .map(function(x){ return {
+      d:x.d, h:x.h, market:x.market,
       s:Math.round(x.s), oh:+x.oh.toFixed(3),
       b:Math.round(x.b), eng:+x.eng.toFixed(2),
       s1:Math.round(x.s1), n1:Math.round(x.n1),
       miss:Math.round(x.miss), t2:Math.round(x.t2), n2:Math.round(x.n2),
-    }));
+    }; });
 
-  // Build new agents list (ALL agents found in this file)
-  const newAgents = Object.entries(agentMap).map(([ulp,info])=>({
-    ulp,
-    name:   (typeof info==='object') ? info.name   : info,
-    market: (typeof info==='object') ? info.market : 'MX',
-  })).sort((a,b)=>a.name.localeCompare(b.name));
+  var newAgents = Object.entries(agentMap).map(function(e){
+    var inf = e[1];
+    return {
+      ulp:    e[0],
+      name:   (typeof inf==='object') ? inf.name   : inf,
+      market: (typeof inf==='object') ? inf.market : 'MX',
+    };
+  }).sort(function(a,b){ return a.name.localeCompare(b.name); });
 
-  return { newDaily, newIV, newAgents, newDailyCount: newDaily.length };
+  return { newDaily:newDaily, newIV:newIV, newAgents:newAgents, newDailyCount:newDaily.length };
 }
 
 // ── Merge new data with existing DB ──
