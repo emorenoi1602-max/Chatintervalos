@@ -1377,11 +1377,21 @@ async function previewFile(input){
 // ── Core processing: XLSX rows → {daily, iv, agents} in Colombia time ──
 function processXLSX(rows){
   // Build agent map from ALL agents in file (not just pre-registered ones)
-  const agentMap = {};  // ulp → name
+  const agentMap = {};  // ulp → {name, market}
   rows.forEach(r=>{
     const ulp = String(r['ULP Account']||'').trim();
     if(!ulp || agentMap[ulp]) return;
-    agentMap[ulp] = extractAgentName(r['Agent Name']||'', ulp);
+    const agentNameRaw = String(r['Agent Name']||'');
+    // Detect market from Agent Name prefix (MX-... or US-...) or from existing DB agents
+    let market = 'MX'; // default
+    if(/^US-/i.test(agentNameRaw)) market = 'US';
+    else if(/^MX-/i.test(agentNameRaw)) market = 'MX';
+    else {
+      // Fall back to existing agent record if available
+      const existing = DB.agents.find(a=>a.ulp===ulp);
+      if(existing && existing.market) market = existing.market;
+    }
+    agentMap[ulp] = { name: extractAgentName(agentNameRaw, ulp), market };
   });
 
   // Filter rows that have any activity
@@ -1420,7 +1430,9 @@ function processXLSX(rows){
     const cd   = colDate(r['Date'], r['Hour']);
     const key  = `${cd}||${ulp}`;
     if(!dailyMap[key]) dailyMap[key]={
-      date:cd, ulp, name: agentMap[ulp] || ulp,
+      date:cd, ulp,
+      name:   (agentMap[ulp]&&agentMap[ulp].name)   ? agentMap[ulp].name   : (agentMap[ulp]||ulp),
+      market: (agentMap[ulp]&&agentMap[ulp].market) ? agentMap[ulp].market : 'MX',
       s:0,ar:0,b:0,eng:0,oh:0,sh:0,s1:0,n1:0,miss:0,t2:0,n2:0
     };
     const x = dailyMap[key];
@@ -1440,7 +1452,7 @@ function processXLSX(rows){
   const newDaily = Object.values(dailyMap)
     .filter(x=>x.s>0)
     .map(x=>({
-      date: x.date, ulp: x.ulp, name: x.name,
+      date: x.date, ulp: x.ulp, name: x.name, market: x.market||'MX',
       dsat:  x.s>0 ? +(x.b/x.s).toFixed(6) : 0,
       aht:   x.s>0 ? +(x.eng/x.s).toFixed(4) : 0,
       tph:   x.oh>0? +(x.s/x.oh).toFixed(4) : 0,
@@ -1459,8 +1471,9 @@ function processXLSX(rows){
   filtered.forEach(r=>{
     const cd  = colDate(r['Date'], r['Hour']);
     const ch  = colHour(r['Hour']);
-    const key = `${cd}||${ch}`;
-    if(!ivMap[key]) ivMap[key]={d:cd,h:ch,s:0,oh:0,b:0,eng:0,s1:0,n1:0,miss:0,t2:0,n2:0};
+    const key = `${cd}||${ch}||${ivMkt}`;
+    const ivMkt = (agentMap[ulp]&&agentMap[ulp].market)?agentMap[ulp].market:'MX';
+    if(!ivMap[key]) ivMap[key]={d:cd,h:ch,market:ivMkt,s:0,oh:0,b:0,eng:0,s1:0,n1:0,miss:0,t2:0,n2:0};
     const x=ivMap[key];
     x.s   +=n(r['Served chats']);
     x.oh  +=n(r['Online Time（H）']);
@@ -1484,8 +1497,11 @@ function processXLSX(rows){
     }));
 
   // Build new agents list (ALL agents found in this file)
-  const newAgents = Object.entries(agentMap).map(([ulp,name])=>({ulp,name}))
-    .sort((a,b)=>a.name.localeCompare(b.name));
+  const newAgents = Object.entries(agentMap).map(([ulp,info])=>({
+    ulp,
+    name:   (typeof info==='object') ? info.name   : info,
+    market: (typeof info==='object') ? info.market : 'MX',
+  })).sort((a,b)=>a.name.localeCompare(b.name));
 
   return { newDaily, newIV, newAgents, newDailyCount: newDaily.length };
 }
