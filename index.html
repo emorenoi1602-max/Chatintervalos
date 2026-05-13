@@ -465,11 +465,11 @@ var   DB_EMBEDDED={"agents":[{"ulp":"ATLCOLBAQ333","name":"Alberto Barrios","mar
 
 // ── GitHub config ──
 function loadGHConfig(){
-  const c=JSON.parse(localStorage.getItem('gh_config')||'{}');
-  if(c.user)    document.getElementById('gh-user').value=c.user;
-  if(c.repo)    document.getElementById('gh-repo').value=c.repo;
-  if(c.branch)  document.getElementById('gh-branch').value=c.branch||'main';
-  if(c.token)   document.getElementById('gh-token').value=c.token;
+  var c=JSON.parse(localStorage.getItem('gh_config')||'{}');
+  document.getElementById('gh-user').value   = c.user   || GH_USER   || '';
+  document.getElementById('gh-repo').value   = c.repo   || GH_REPO   || '';
+  document.getElementById('gh-branch').value = (c.branch || GH_BRANCH || 'main').toLowerCase();
+  document.getElementById('gh-token').value  = c.token  || '';
 }
 function saveGHConfig(){
   localStorage.setItem('gh_config', JSON.stringify({
@@ -483,38 +483,64 @@ function getGHConfig(){
   return JSON.parse(localStorage.getItem('gh_config')||'{}');
 }
 
+// ── REPO CONFIG — edit these once to match your GitHub repo ──
+var GH_USER   = '';   // e.g. 'emorenoi1602-max'
+var GH_REPO   = '';   // e.g. 'Chatintervalos'
+var GH_BRANCH = 'main'; // always lowercase
+
 // ── DB (loaded async from GitHub or embedded fallback) ──
 var DB = null;
 
 async function loadData(){
-  // 1. Always try relative ./data.json first (works on GitHub Pages for all visitors)
+  // Merge saved config over built-in constants
+  var cfg    = getGHConfig();
+  var user   = cfg.user   || GH_USER;
+  var repo   = cfg.repo   || GH_REPO;
+  var branch = (cfg.branch || GH_BRANCH || 'main').trim();
+
+  if(user && repo){
+    // Primary: GitHub Contents API — always returns latest commit, zero CDN cache
+    try{
+      var apiUrl = 'https://api.github.com/repos/'+user+'/'+repo+'/contents/data.json?ref='+branch;
+      var apiResp = await fetch(apiUrl, {
+        headers: { 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if(apiResp.ok){
+        var meta = await apiResp.json();
+        // Content is base64 encoded
+        var jsonStr = decodeURIComponent(escape(atob(meta.content.replace(/
+/g,''))));
+        DB = JSON.parse(jsonStr);
+        console.log('✓ data.json loaded from GitHub API (no cache)');
+        return;
+      }
+    } catch(e){ console.warn('GitHub API fetch failed:', e.message); }
+
+    // Fallback A: raw.githubusercontent.com with cache-buster
+    try{
+      var rawUrl = 'https://raw.githubusercontent.com/'+user+'/'+repo+'/'+branch+'/data.json?_='+Date.now();
+      var rawResp = await fetch(rawUrl);
+      if(rawResp.ok){
+        DB = await rawResp.json();
+        console.log('✓ data.json loaded from raw.githubusercontent.com');
+        return;
+      }
+    } catch(e){ console.warn('raw.githubusercontent fetch failed:', e.message); }
+  }
+
+  // Fallback B: relative path (GitHub Pages, may be cached)
   try{
-    var relResp = await fetch('./data.json?_=' + Date.now());
+    var relResp = await fetch('./data.json?_='+Date.now());
     if(relResp.ok){
       DB = await relResp.json();
-      console.log('✓ data.json loaded from relative path (GitHub Pages)');
+      console.log('✓ data.json loaded from relative path');
       return;
     }
   } catch(e){ console.warn('Relative fetch failed:', e.message); }
 
-  // 2. Try raw.githubusercontent.com using saved config (works for admin with token)
-  var cfg = getGHConfig();
-  var branch = cfg.branch || 'main';
-  if(cfg.user && cfg.repo){
-    try{
-      var ghUrl = 'https://raw.githubusercontent.com/' + cfg.user + '/' + cfg.repo + '/' + branch + '/data.json?_=' + Date.now();
-      var ghResp = await fetch(ghUrl);
-      if(ghResp.ok){
-        DB = await ghResp.json();
-        console.log('✓ data.json loaded from raw.githubusercontent.com');
-        return;
-      }
-    } catch(e){ console.warn('GitHub raw fetch failed:', e.message); }
-  }
-
-  // 3. Last resort: embedded snapshot (always available, may be outdated)
-  DB = DB_EMBEDDED;
-  console.warn('⚠ Using embedded data snapshot — may not be latest');
+  // Last resort: embedded snapshot
+  DB = JSON.parse(JSON.stringify(DB_EMBEDDED));
+  console.warn('⚠ Using embedded snapshot — data may be outdated');
 }
 
 
@@ -1335,28 +1361,28 @@ function closeUploadModal(){
 
 // ── XLSX preview & client-side processing ──
 async function previewFile(input){
-  const file = input.files[0];
+  var file = input.files[0];
   if(!file) return;
   setStatus('info','⏳ Leyendo archivo...');
   setProgress(15);
   try{
-    const buf = await file.arrayBuffer();
-    const wb  = XLSX.read(buf, {type:'array', cellDates:true});
+    var buf = await file.arrayBuffer();
+    var wb  = XLSX.read(buf, {type:'array', cellDates:true});
 
     // Expect sheet named 'sheet1' or first sheet
-    const shName = wb.SheetNames.includes('sheet1') ? 'sheet1' : wb.SheetNames[0];
-    const rows   = XLSX.utils.sheet_to_json(wb.Sheets[shName], {defval:0});
+    var shName = wb.SheetNames.includes('sheet1') ? 'sheet1' : wb.SheetNames[0];
+    var rows   = XLSX.utils.sheet_to_json(wb.Sheets[shName], {defval:0});
     setProgress(35);
 
     if(!rows.length) throw new Error('El archivo está vacío o no tiene datos.');
 
     // Validate expected columns
-    const sample = rows[0];
-    const required = ['Date','Hour','ULP Account','Served chats','Assigned&Replied Chat',
+    var sample = rows[0];
+    var required = ['Date','Hour','ULP Account','Served chats','Assigned&Replied Chat',
                       'Engagement duration（min）','Bad chats','Online Time（H）','Serving Time（H）',
                       'is30s1ServedID','not30s1ServedID','Missed Engagements',
                       '30s2 Served Engagements','Non-30s2 Served Engagements'];
-    const missing = required.filter(c=>!(c in sample));
+    var missing = required.filter(c=>!(c in sample));
     if(missing.length) throw new Error(`Columnas faltantes: ${missing.join(', ')}`);
 
     setProgress(50);
@@ -1506,47 +1532,48 @@ function processXLSX(rows){
 
 // ── Merge new data with existing DB ──
 function mergeData(existing, incoming){
-  // Agents: existing kept, new ones added (existing names preserved if already known)
-  const agentMap = {};
-  existing.agents.forEach(a => { agentMap[a.ulp] = a.name; });
-  incoming.newAgents.forEach(a => {
-    if(!agentMap[a.ulp]) agentMap[a.ulp] = a.name;  // only add truly new ones
+  // Agents: merge preserving existing names and markets
+  var agentMap = {};
+  existing.agents.forEach(function(a){ agentMap[a.ulp] = {name:a.name, market:a.market||'MX'}; });
+  incoming.newAgents.forEach(function(a){
+    if(!agentMap[a.ulp]) agentMap[a.ulp] = {name:a.name, market:a.market||'MX'};
   });
-  const agents = Object.entries(agentMap)
-    .map(([ulp,name])=>({ulp,name}))
-    .sort((a,b)=>a.name.localeCompare(b.name));
+  var agents = Object.entries(agentMap)
+    .map(function(e){ return {ulp:e[0], name:e[1].name, market:e[1].market}; })
+    .sort(function(a,b){ return a.name.localeCompare(b.name); });
 
-  // Daily: key = date||ulp → new data wins for same key
-  const dailyMap = {};
-  existing.daily.forEach(r => { dailyMap[`${r.date}||${r.ulp}`] = r; });
-  incoming.newDaily.forEach(r => { dailyMap[`${r.date}||${r.ulp}`] = r; });
+  // Daily: key = date||ulp → new data wins
+  var dailyMap = {};
+  existing.daily.forEach(function(r){ dailyMap[r.date+'||'+r.ulp] = r; });
+  incoming.newDaily.forEach(function(r){ dailyMap[r.date+'||'+r.ulp] = r; });
 
-  // IV: key = d||h → new data wins for same key
-  const ivMap = {};
-  existing.iv.forEach(r => { ivMap[`${r.d}||${r.h}`] = r; });
-  incoming.newIV.forEach(r => { ivMap[`${r.d}||${r.h}`] = r; });
+  // IV: key = d||h||market → new data wins
+  var ivMap = {};
+  existing.iv.forEach(function(r){ ivMap[r.d+'||'+r.h+'||'+(r.market||'MX')] = r; });
+  incoming.newIV.forEach(function(r){ ivMap[r.d+'||'+r.h+'||'+(r.market||'MX')] = r; });
 
-  const daily  = Object.values(dailyMap).sort((a,b)=>a.date<b.date?-1:1);
-  const iv     = Object.values(ivMap).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:a.h-b.h);
-  const dates  = [...new Set(daily.map(r=>r.date))].sort();
-  const months = [...new Set(dates.map(d=>d.slice(0,7)))].sort();
+  var daily  = Object.values(dailyMap).sort(function(a,b){ return a.date<b.date?-1:1; });
+  var iv     = Object.values(ivMap).sort(function(a,b){ return a.d<b.d?-1:a.d>b.d?1:a.h-b.h; });
+  var dates  = daily.map(function(r){return r.date;}).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
+  var months = dates.map(function(d){return d.slice(0,7);}).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
+  var mkts   = agents.map(function(a){return a.market;}).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
 
-  return { agents, daily, iv, dates, months };
+  return { agents:agents, daily:daily, iv:iv, dates:dates, months:months, markets:mkts };
 }
 
 // ── Preview before commit ──
 function showMergePreview(incoming){
-  const newDates    = [...new Set(incoming.newDaily.map(r=>r.date))].sort();
-  const existDates  = new Set(DB.dates);
-  const brandNew    = newDates.filter(d=>!existDates.has(d));
-  const updated     = newDates.filter(d=>existDates.has(d));
-  const kept        = DB.dates.filter(d=>!newDates.includes(d));
+  var newDates    = [...new Set(incoming.newDaily.map(r=>r.date))].sort();
+  var existDates  = new Set(DB.dates);
+  var brandNew    = newDates.filter(d=>!existDates.has(d));
+  var updated     = newDates.filter(d=>existDates.has(d));
+  var kept        = DB.dates.filter(d=>!newDates.includes(d));
 
-  const existULPs   = new Set(DB.agents.map(a=>a.ulp));
-  const newAgents   = incoming.newAgents.filter(a=>!existULPs.has(a.ulp));
-  const totalAgents = new Set([...DB.agents.map(a=>a.ulp), ...incoming.newAgents.map(a=>a.ulp)]).size;
+  var existULPs   = new Set(DB.agents.map(a=>a.ulp));
+  var newAgents   = incoming.newAgents.filter(a=>!existULPs.has(a.ulp));
+  var totalAgents = new Set([...DB.agents.map(a=>a.ulp), ...incoming.newAgents.map(a=>a.ulp)]).size;
 
-  const box = document.getElementById('merge-preview-box');
+  var box = document.getElementById('merge-preview-box');
   box.style.display='block';
   box.innerHTML=`<div class="merge-preview">
     <div class="mp-row"><span class="mp-label">Fechas Colombia nuevas:</span>
@@ -1571,35 +1598,43 @@ function showMergePreview(incoming){
 
 // ── Commit merged data.json to GitHub ──
 async function commitToGitHub(){
-  const cfg = getGHConfig();
-  if(!cfg.user||!cfg.repo||!cfg.token){
+  var cfg = getGHConfig();
+  // Also check built-in constants as fallback for user/repo
+  var commitUser   = (cfg.user   || GH_USER  || '').trim();
+  var commitRepo   = (cfg.repo   || GH_REPO  || '').trim();
+  var commitBranch = (cfg.branch || GH_BRANCH || 'main').trim().toLowerCase();
+  var commitToken  = (cfg.token  || '').trim();
+
+  if(!commitUser || !commitRepo || !commitToken){
     setStatus('err','✗ Completa la configuración GitHub (usuario, repositorio y token).');
     return;
   }
+  // Sync back to cfg so rest of function uses corrected values
+  cfg.user=commitUser; cfg.repo=commitRepo; cfg.branch=commitBranch; cfg.token=commitToken;
 
-  const btn = document.getElementById('btn-commit');
+  var btn = document.getElementById('btn-commit');
   btn.disabled=true;
   setProgress(10);
 
   try{
     // 1. Merge data
     setStatus('info','⏳ Fusionando datos...');
-    const merged = mergeData(DB, PENDING_DATA);
+    var merged = mergeData(DB, PENDING_DATA);
     setProgress(25);
 
     // 2. Get current file SHA (required by GitHub API for updates)
     setStatus('info','⏳ Conectando a GitHub...');
-    const apiBase = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/data.json`;
-    const headers = {
-      'Authorization': `token ${cfg.token}`,
+    var apiBase = 'https://api.github.com/repos/'+commitUser+'/'+commitRepo+'/contents/data.json';
+    var headers = {
+      'Authorization': 'token '+commitToken,
       'Accept': 'application/vnd.github.v3+json',
       'Content-Type': 'application/json',
     };
 
     var sha = null;
-    const getResp = await fetch(`${apiBase}?ref=${cfg.branch||'main'}`, {headers});
+    var getResp = await fetch(apiBase+'?ref='+commitBranch, {headers});
     if(getResp.ok){
-      const meta = await getResp.json();
+      var meta = await getResp.json();
       sha = meta.sha;
     } else if(getResp.status !== 404){
       throw new Error(`GitHub API error ${getResp.status}: ${await getResp.text()}`);
@@ -1608,32 +1643,32 @@ async function commitToGitHub(){
 
     // 3. Encode merged JSON as base64
     setStatus('info','⏳ Preparando datos...');
-    const jsonStr  = JSON.stringify(merged, null, 2);
-    const b64      = btoa(unescape(encodeURIComponent(jsonStr)));
+    var jsonStr  = JSON.stringify(merged, null, 2);
+    var b64      = btoa(unescape(encodeURIComponent(jsonStr)));
     setProgress(60);
 
     // 4. Commit via GitHub API
     setStatus('info','⏳ Publicando en GitHub...');
-    const newDates = [...new Set(PENDING_DATA.newDaily.map(r=>r.date))].sort();
-    const body = {
+    var newDates = [...new Set(PENDING_DATA.newDaily.map(r=>r.date))].sort();
+    var body = {
       message: `[dashboard] Actualización de datos — ${newDates.join(', ')}`,
       content: b64,
-      branch: cfg.branch||'main',
+      branch: commitBranch,
     };
     if(sha) body.sha = sha;
 
-    const putResp = await fetch(apiBase, {method:'PUT', headers, body:JSON.stringify(body)});
+    var putResp = await fetch(apiBase, {method:'PUT', headers, body:JSON.stringify(body)});
     setProgress(85);
 
     if(!putResp.ok){
-      const err = await putResp.json();
+      var err = await putResp.json();
       throw new Error(err.message || `HTTP ${putResp.status}`);
     }
     setProgress(100);
 
     // 5. Update local DB in memory so dashboard reflects changes immediately
     DB = merged;
-    setStatus('ok', `✓ Datos publicados correctamente. ${merged.dates.length} fechas · ${merged.daily.length} registros totales.`);
+    setStatus('ok', '✓ Publicado en '+commitUser+'/'+commitRepo+' ('+commitBranch+'). '+merged.dates.length+' fechas · '+merged.daily.length+' registros.');
 
     // Refresh dashboard
     setTimeout(()=>{
@@ -1650,7 +1685,7 @@ async function commitToGitHub(){
 }
 
 function setStatus(type, msg){
-  const el = document.getElementById('upload-status');
+  var el = document.getElementById('upload-status');
   el.className = 'mstatus '+type;
   el.textContent = msg;
 }
