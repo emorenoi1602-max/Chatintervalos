@@ -508,8 +508,7 @@ async function loadData(){
       if(apiResp.ok){
         var meta = await apiResp.json();
         // Content is base64 encoded
-        var jsonStr = decodeURIComponent(escape(atob(meta.content.replace(/
-/g,''))));
+        var jsonStr = decodeURIComponent(escape(atob(meta.content.split('\n').join(''))));
         DB = JSON.parse(jsonStr);
         console.log('✓ data.json loaded from GitHub API (no cache)');
         return;
