@@ -483,63 +483,78 @@ function getGHConfig(){
   return JSON.parse(localStorage.getItem('gh_config')||'{}');
 }
 
-// ── REPO CONFIG — edit these once to match your GitHub repo ──
-var GH_USER   = '';   // e.g. 'emorenoi1602-max'
-var GH_REPO   = '';   // e.g. 'Chatintervalos'
-var GH_BRANCH = 'main'; // always lowercase
+// ── REPO CONFIG ──
+var GH_USER   = 'emorenoi1602-max';
+var GH_REPO   = 'Chatintervalos';
+var GH_BRANCH = 'main';
 
 // ── DB (loaded async from GitHub or embedded fallback) ──
 var DB = null;
 
 async function loadData(){
-  // Merge saved config over built-in constants
   var cfg    = getGHConfig();
-  var user   = cfg.user   || GH_USER;
-  var repo   = cfg.repo   || GH_REPO;
-  var branch = (cfg.branch || GH_BRANCH || 'main').trim();
+  var user   = (cfg.user   || GH_USER   || '').trim();
+  var repo   = (cfg.repo   || GH_REPO   || '').trim();
+  var branch = (cfg.branch || GH_BRANCH || 'main').trim().toLowerCase();
+  var token  = (cfg.token  || '').trim();
+
+  console.log('[loadData] user='+user+' repo='+repo+' branch='+branch+' token='+(token?'✓':'✗'));
 
   if(user && repo){
-    // Primary: GitHub Contents API — always returns latest commit, zero CDN cache
-    try{
-      var apiUrl = 'https://api.github.com/repos/'+user+'/'+repo+'/contents/data.json?ref='+branch;
-      var apiResp = await fetch(apiUrl, {
-        headers: { 'Accept': 'application/vnd.github.v3+json' }
-      });
-      if(apiResp.ok){
-        var meta = await apiResp.json();
-        // Content is base64 encoded
-        var jsonStr = decodeURIComponent(escape(atob(meta.content.split('\n').join(''))));
-        DB = JSON.parse(jsonStr);
-        console.log('✓ data.json loaded from GitHub API (no cache)');
-        return;
-      }
-    } catch(e){ console.warn('GitHub API fetch failed:', e.message); }
+    // Build headers — include token if available (needed for private repos)
+    var apiHeaders = {'Accept':'application/vnd.github.v3+json'};
+    if(token) apiHeaders['Authorization'] = 'token '+token;
 
-    // Fallback A: raw.githubusercontent.com with cache-buster
+    // PRIMARY: GitHub Contents API — no CDN cache, works for private repos with token
     try{
-      var rawUrl = 'https://raw.githubusercontent.com/'+user+'/'+repo+'/'+branch+'/data.json?_='+Date.now();
+      var apiUrl  = 'https://api.github.com/repos/'+user+'/'+repo+'/contents/data.json?ref='+branch+'&_='+Date.now();
+      var apiResp = await fetch(apiUrl, {headers: apiHeaders});
+      console.log('[loadData] API status:', apiResp.status);
+      if(apiResp.ok){
+        var meta    = await apiResp.json();
+        var b64     = meta.content.split('\n').join('');
+        var jsonStr = decodeURIComponent(escape(atob(b64)));
+        DB = JSON.parse(jsonStr);
+        console.log('✓ Loaded from GitHub API — dates:', DB.dates.length, 'agents:', DB.agents.length);
+        try{ localStorage.setItem('db_cache', jsonStr); localStorage.setItem('db_cache_ts', Date.now()); } catch(e){}
+        return;
+      } else {
+        console.warn('[loadData] API returned', apiResp.status, apiResp.status===404?'(repo not found or private — check token)':apiResp.status===401?'(invalid token)':'');
+      }
+    } catch(e){ console.warn('[loadData] API error:', e.message); }
+
+    // FALLBACK A: raw.githubusercontent.com (only works for public repos)
+    try{
+      var rawUrl  = 'https://raw.githubusercontent.com/'+user+'/'+repo+'/'+branch+'/data.json?_='+Date.now();
       var rawResp = await fetch(rawUrl);
       if(rawResp.ok){
         DB = await rawResp.json();
-        console.log('✓ data.json loaded from raw.githubusercontent.com');
+        console.log('✓ Loaded from raw.githubusercontent');
+        try{ localStorage.setItem('db_cache', JSON.stringify(DB)); localStorage.setItem('db_cache_ts', Date.now()); } catch(e){}
         return;
+      } else {
+        console.warn('[loadData] raw returned', rawResp.status, '(private repo needs token in API call)');
       }
-    } catch(e){ console.warn('raw.githubusercontent fetch failed:', e.message); }
+    } catch(e){ console.warn('[loadData] raw error:', e.message); }
+  } else {
+    console.warn('[loadData] No user/repo — user='+user+' repo='+repo);
   }
 
-  // Fallback B: relative path (GitHub Pages, may be cached)
+  // FALLBACK B: localStorage cache
   try{
-    var relResp = await fetch('./data.json?_='+Date.now());
-    if(relResp.ok){
-      DB = await relResp.json();
-      console.log('✓ data.json loaded from relative path');
+    var cached = localStorage.getItem('db_cache');
+    if(cached){
+      DB = JSON.parse(cached);
+      var ts  = localStorage.getItem('db_cache_ts');
+      var age = ts ? Math.round((Date.now()-+ts)/60000) : '?';
+      console.log('✓ Loaded from localStorage cache ('+age+' min old) — datos pueden no ser los más recientes');
       return;
     }
-  } catch(e){ console.warn('Relative fetch failed:', e.message); }
+  } catch(e){}
 
-  // Last resort: embedded snapshot
+  // FALLBACK C: embedded snapshot
   DB = JSON.parse(JSON.stringify(DB_EMBEDDED));
-  console.warn('⚠ Using embedded snapshot — data may be outdated');
+  console.warn('⚠ Using embedded snapshot — may be outdated');
 }
 
 
@@ -1665,16 +1680,22 @@ async function commitToGitHub(){
     }
     setProgress(100);
 
-    // 5. Update local DB in memory so dashboard reflects changes immediately
+    // 5. Update local DB in memory immediately
     DB = merged;
-    setStatus('ok', '✓ Publicado en '+commitUser+'/'+commitRepo+' ('+commitBranch+'). '+merged.dates.length+' fechas · '+merged.daily.length+' registros.');
+    // Also cache in localStorage
+    try{ localStorage.setItem('db_cache', JSON.stringify(merged)); localStorage.setItem('db_cache_ts', Date.now()); } catch(e){}
+    setStatus('ok', '✓ Publicado en '+commitUser+'/'+commitRepo+' ('+commitBranch+'). '+merged.dates.length+' fechas · '+merged.daily.length+' registros. Recargando...');
+    setProgress(100);
 
-    // Refresh dashboard
-    setTimeout(()=>{
+    // Wait 3s for GitHub to process commit, then re-fetch from API to confirm
+    setTimeout(async function(){
+      await loadData();
       initDropdowns();
+      ST.month = DB.months[DB.months.length-1];
       renderAll();
-      setTimeout(closeUploadModal, 1800);
-    }, 600);
+      setStatus('ok', '✓ Dashboard actualizado. '+DB.dates.length+' fechas · '+DB.daily.length+' registros totales.');
+      setTimeout(closeUploadModal, 2000);
+    }, 3000);
 
   } catch(e){
     setStatus('err','✗ Error al publicar: '+e.message);
