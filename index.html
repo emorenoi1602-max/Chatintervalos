@@ -267,6 +267,55 @@ tbody td{padding:7px 10px;white-space:nowrap;}
 .mp-val{color:var(--t1);font-weight:600;}
 .mp-new{color:var(--teal);}
 .mp-kept{color:var(--cyan);}
+
+/* ── WFM TABS ── */
+.wfm-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px;flex-wrap:wrap;}
+.wfm-tab{
+  padding:9px 20px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;
+  font-family:var(--mono);cursor:pointer;border:none;background:transparent;
+  color:var(--t3);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .18s;
+}
+.wfm-tab:hover{color:var(--t2);}
+.wfm-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+.wfm-pane{display:none;}
+.wfm-pane.active{display:block;}
+
+/* Staffing grid */
+.sg-wrap{overflow-x:auto;}
+.sg-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;}
+.sg-table th{padding:7px 10px;text-align:center;font-size:8px;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--border);white-space:nowrap;}
+.sg-table th.left{text-align:left;}
+.sg-table td{padding:6px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,.03);}
+.sg-table tr:hover td{background:var(--bg3);}
+.ag-chip{display:inline-flex;align-items:center;justify-content:center;width:32px;height:22px;border-radius:5px;font-size:11px;font-weight:700;}
+.ag-ok{background:rgba(0,229,179,.15);color:var(--teal);}
+.ag-warn{background:rgba(255,209,102,.15);color:var(--yellow);}
+.ag-crit{background:rgba(255,71,87,.15);color:var(--red);}
+.ag-low{background:rgba(0,212,255,.1);color:var(--cyan);}
+
+/* Controls */
+.wfm-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;padding:13px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;}
+.wfm-ctrl{display:flex;align-items:center;gap:7px;font-size:11px;font-family:var(--mono);color:var(--t2);}
+.wfm-ctrl label{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;}
+.wfm-ctrl input[type=range]{width:90px;accent-color:var(--cyan);}
+.wfm-ctrl input[type=number]{width:60px;background:var(--bg3);border:1px solid var(--border);color:var(--t1);padding:4px 7px;border-radius:4px;font-family:var(--mono);font-size:11px;text-align:center;}
+.wfm-ctrl span{font-weight:700;color:var(--cyan);min-width:32px;}
+
+/* Projection */
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px;}
+.proj-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.proj-card .pc-title{font-size:9px;font-family:var(--mono);color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.proj-card .pc-val{font-size:26px;font-weight:700;font-family:var(--mono);color:var(--cyan);line-height:1;}
+.proj-card .pc-sub{font-size:9px;color:var(--t3);font-family:var(--mono);margin-top:4px;}
+.proj-chart-wrap{position:relative;height:220px;margin-bottom:16px;}
+.proj-panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;}
+.scenario-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;margin-top:10px;}
+.scenario-table th{padding:7px 12px;text-align:left;font-size:8px;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--border);}
+.scenario-table td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.03);}
+.scenario-table tr:hover td{background:var(--bg3);}
+.gap-pos{color:var(--red);font-weight:700;}
+.gap-neg{color:var(--teal);font-weight:700;}
+
 </style>
 </head>
 <body>
@@ -428,6 +477,149 @@ tbody td{padding:7px 10px;white-space:nowrap;}
   <div class="sh"><div class="stitle">Insights Automáticos & Recomendaciones</div></div>
   <div class="ins-grid" id="ins-grid"></div>
 
+
+<!-- ═══════════════════════════ WFM SECTION ═══════════════════════════ -->
+<div class="sh" style="margin-top:24px;">
+  <div class="stitle">📐 Workforce Management</div>
+  <div class="smeta">TPH 17 · Ausentismo 5% · Promedio Lun–Vie · Dimensionamiento por mercado</div>
+</div>
+
+<div class="wfm-tabs">
+  <button class="wfm-tab active" id="wfm-btn-staffing"  onclick="wfmTab('staffing')">📋 Malla de Staffing</button>
+  <button class="wfm-tab"        id="wfm-btn-dimension" onclick="wfmTab('dimension')">📈 Dimensionamiento & Proyección</button>
+</div>
+
+<!-- ── PANE 1: STAFFING GRID ── -->
+<div class="wfm-pane active" id="wfm-staffing">
+
+  <div class="wfm-controls">
+    <div class="wfm-ctrl">
+      <label>Mercado</label>
+      <div class="market-pills" style="gap:4px;">
+        <button class="mpill mx active" id="wfm-mp-MX" onclick="setWfmMarket('MX')">🇨🇳 MX</button>
+        <button class="mpill us"        id="wfm-mp-US" onclick="setWfmMarket('US')">🇺🇸 US</button>
+      </div>
+    </div>
+    <div class="wfm-ctrl">
+      <label>TPH base</label>
+      <input type="number" id="wfm-tph" value="17" min="5" max="50" step="0.5" onchange="renderStaffingGrid()">
+    </div>
+    <div class="wfm-ctrl">
+      <label>Ausentismo %</label>
+      <input type="number" id="wfm-absent" value="5" min="0" max="40" step="0.5" onchange="renderStaffingGrid()">
+    </div>
+    <div class="wfm-ctrl">
+      <label>SLA target (seg)</label>
+      <input type="number" id="wfm-sla-t" value="30" min="5" max="120" onchange="renderStaffingGrid()">
+    </div>
+    <div class="wfm-ctrl">
+      <label>SLA % objetivo</label>
+      <input type="number" id="wfm-sla-pct" value="95" min="50" max="100" onchange="renderStaffingGrid()">
+    </div>
+  </div>
+
+  <!-- Market summary cards -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:14px;" id="wfm-mkt-cards"></div>
+
+  <!-- Staffing grid table -->
+  <div class="sg-wrap">
+    <table class="sg-table">
+      <thead>
+        <tr>
+          <th class="left">Hora COT</th>
+          <th>Vol/día</th>
+          <th>AHT (min)</th>
+          <th>TPH real</th>
+          <th>Ag. productivos</th>
+          <th>+ Ausentismo 5%</th>
+          <th>Ag. a programar</th>
+          <th>Ocupación %</th>
+          <th>SL 30s est.</th>
+        </tr>
+      </thead>
+      <tbody id="staffing-body"></tbody>
+    </table>
+  </div>
+
+  <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;font-family:var(--mono);font-size:9.5px;color:var(--t3);">
+    <span><span style="display:inline-block;width:12px;height:12px;background:rgba(0,229,179,.2);border-radius:3px;vertical-align:middle;margin-right:4px;"></span>Cubierto</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:rgba(255,209,102,.2);border-radius:3px;vertical-align:middle;margin-right:4px;"></span>Riesgo</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:rgba(255,71,87,.2);border-radius:3px;vertical-align:middle;margin-right:4px;"></span>Crítico</span>
+    <span style="margin-left:8px;color:var(--t4);">
+      Fórmula: Ag.productivos = ⌈Vol_hora / TPH_base⌉ · Ag.programados = ⌈Productivos / (1 − Ausentismo%)⌉
+    </span>
+  </div>
+</div><!-- end wfm-staffing -->
+
+<!-- ── PANE 2: DIMENSIONAMIENTO ── -->
+<div class="wfm-pane" id="wfm-dimension">
+
+  <div class="wfm-controls">
+    <div class="wfm-ctrl">
+      <label>Mercado</label>
+      <div class="market-pills" style="gap:4px;">
+        <button class="mpill mx active" id="dim-mp-MX" onclick="setDimMarket('MX')">🇨🇳 MX</button>
+        <button class="mpill us"        id="dim-mp-US" onclick="setDimMarket('US')">🇺🇸 US</button>
+      </div>
+    </div>
+    <div class="wfm-ctrl">
+      <label>HC actual</label>
+      <input type="number" id="dim-hc" value="24" min="1" max="300" onchange="renderDimension()">
+      <span id="dim-hc-label" style="font-size:9px;color:var(--t3);font-family:var(--mono);">MX</span>
+    </div>
+    <div class="wfm-ctrl" style="gap:12px;">
+      <label>Parámetros fijos:</label>
+      <span style="font-size:9px;font-family:var(--mono);color:var(--teal);">TPH 17 · 7.33H/día · Shrinkage 5% · 125 chats/ag/día · 6 días/semana</span>
+    </div>
+    <div class="wfm-ctrl">
+      <label>Crecimiento %/mes</label>
+      <input type="range" id="dim-growth" min="-20" max="60" value="10"
+             oninput="document.getElementById('dim-growth-val').textContent=this.value+'%';renderDimension()">
+      <span id="dim-growth-val">10%</span>
+    </div>
+    <div class="wfm-ctrl">
+      <label>Meses</label>
+      <input type="range" id="dim-months" min="1" max="12" value="6"
+             oninput="document.getElementById('dim-months-val').textContent=this.value+' m';renderDimension()">
+      <span id="dim-months-val">6 m</span>
+    </div>
+  </div>
+
+  <div class="proj-grid" id="dim-kpi-cards"></div>
+
+  <div class="proj-panel">
+    <div class="sh" style="margin-bottom:10px;">
+      <div class="stitle" style="font-size:9px;" id="dim-chart-title">Proyección de HC — Mercado MX</div>
+    </div>
+    <div class="proj-chart-wrap"><canvas id="chart-projection"></canvas></div>
+  </div>
+
+  <div class="proj-panel">
+    <div class="sh" style="margin-bottom:10px;">
+      <div class="stitle" style="font-size:9px;">Tabla de Dimensionamiento Mensual</div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="scenario-table">
+        <thead>
+          <tr>
+            <th>Mes</th>
+            <th>Vol/día est.</th>
+            <th>Cap/ag/día</th>
+            <th>HC productivo</th>
+            <th>HC prog./día (+5%)</th>
+            <th style="color:var(--cyan);">🎯 HC TOTAL (6d/sem)</th>
+            <th>HC disponible</th>
+            <th>Gap</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody id="scenario-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- end wfm-dimension -->
+
 </main>
 
 <footer class="footer">
@@ -465,22 +657,30 @@ var   DB_EMBEDDED={"agents":[{"ulp":"ATLCOLBAQ333","name":"Alberto Barrios","mar
 
 // ── GitHub config ──
 function loadGHConfig(){
-  var c=JSON.parse(localStorage.getItem('gh_config')||'{}');
-  document.getElementById('gh-user').value   = c.user   || GH_USER   || '';
-  document.getElementById('gh-repo').value   = c.repo   || GH_REPO   || '';
-  document.getElementById('gh-branch').value = (c.branch || GH_BRANCH || 'main').toLowerCase();
-  document.getElementById('gh-token').value  = c.token  || '';
+  // user/repo/branch always come from hardcoded constants — never from localStorage
+  document.getElementById('gh-user').value   = GH_USER;
+  document.getElementById('gh-repo').value   = GH_REPO;
+  document.getElementById('gh-branch').value = GH_BRANCH;
+  // Only the token is saved/loaded from localStorage
+  var c = JSON.parse(localStorage.getItem('gh_config')||'{}');
+  document.getElementById('gh-token').value  = c.token || '';
+  // Clean up any stale user/repo saved in localStorage
+  if(c.user || c.repo){ delete c.user; delete c.repo; delete c.branch; localStorage.setItem('gh_config', JSON.stringify(c)); }
 }
 function saveGHConfig(){
-  localStorage.setItem('gh_config', JSON.stringify({
-    user:   document.getElementById('gh-user').value.trim(),
-    repo:   document.getElementById('gh-repo').value.trim(),
-    branch: document.getElementById('gh-branch').value.trim()||'main',
-    token:  document.getElementById('gh-token').value.trim(),
-  }));
+  // Only save the token — user/repo/branch are hardcoded constants
+  var existing = JSON.parse(localStorage.getItem('gh_config')||'{}');
+  existing.token = document.getElementById('gh-token').value.trim();
+  localStorage.setItem('gh_config', JSON.stringify(existing));
 }
 function getGHConfig(){
-  return JSON.parse(localStorage.getItem('gh_config')||'{}');
+  var stored = JSON.parse(localStorage.getItem('gh_config')||'{}');
+  return {
+    user:   GH_USER,
+    repo:   GH_REPO,
+    branch: GH_BRANCH,
+    token:  stored.token || '',
+  };
 }
 
 // ── REPO CONFIG ──
@@ -490,6 +690,38 @@ var GH_BRANCH = 'main';
 
 // ── DB (loaded async from GitHub or embedded fallback) ──
 var DB = null;
+
+// ── Self-healing patch: derive missing market fields from agents ──
+function patchDB(){
+  if(!DB) return;
+  // Build ulp→market map from agents
+  var ulpMkt = {};
+  (DB.agents||[]).forEach(function(a){ if(a.ulp&&a.market) ulpMkt[a.ulp]=a.market; });
+
+  // Patch daily records missing market
+  var patchedD=0;
+  (DB.daily||[]).forEach(function(r){
+    if(!r.market && ulpMkt[r.ulp]){ r.market=ulpMkt[r.ulp]; patchedD++; }
+  });
+
+  // Patch iv records missing market — derive from most common market of that date
+  // Build date→market from daily
+  var dateMkt = {};
+  (DB.daily||[]).forEach(function(r){ if(r.market) dateMkt[r.date]=r.market; });
+
+  var patchedIV=0;
+  (DB.iv||[]).forEach(function(r){
+    if(!r.market){
+      r.market = dateMkt[r.d] || 'MX';
+      patchedIV++;
+    }
+  });
+
+  if(patchedD||patchedIV)
+    console.log('patchDB: fixed '+patchedD+' daily + '+patchedIV+' iv records with missing market field');
+  else
+    console.log('patchDB: all records OK — no patching needed');
+}
 
 async function loadData(){
   var cfg    = getGHConfig();
@@ -670,6 +902,18 @@ function filteredData(){
   });
 }
 function filteredDates(){return[...new Set(filteredData().map(r=>r.date))].sort();}
+
+// WFM uses its own date filter — ignores ST.market so each market tab is independent
+function wfmDates(market){
+  const wm = buildWeekMap(ST.month);
+  return [...new Set(DB.daily.filter(function(r){
+    if(!r.date.startsWith(ST.month)) return false;
+    if(r.market !== market) return false;               // use WFM's own market
+    if(ST.semana!=='all'&&!(wm[ST.semana]||[]).includes(r.date)) return false;
+    if(ST.dia!=='all'&&r.date!==ST.dia) return false;
+    return true;
+  }).map(function(r){ return r.date; }))].sort();
+}
 
 // ====== INIT DROPDOWNS ======
 function initDropdowns(){
@@ -1297,6 +1541,13 @@ function renderAll(){
   renderHeatmap();
   renderTable();
   renderInsights();
+  // WFM re-render
+  try{
+    if(document.getElementById('wfm-staffing') && document.getElementById('wfm-staffing').classList.contains('active'))
+      renderStaffingGrid();
+    else if(document.getElementById('wfm-dimension') && document.getElementById('wfm-dimension').classList.contains('active'))
+      renderDimension();
+  }catch(e){}
 }
 
 // ====== MARKET FILTER ======
@@ -1350,9 +1601,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   updateClock(); setInterval(updateClock,1000);
   loadGHConfig();
   await loadData();
+  patchDB();  // ensure all records have market field
   // Now DB is loaded — safe to initialize month
   ST.month = DB.months[DB.months.length-1];
   initDropdowns(); setView('mes'); initTrendBtns(); initHMBtns(); renderAll();
+  // Init WFM defaults
+  try{ renderStaffingGrid(); }catch(e){}
 });
 
 // ══════════════════════════════════════════════════════════
@@ -1713,6 +1967,375 @@ function setProgress(pct){
   document.getElementById('prog-fill').style.width = pct+'%';
 }
 
+
+
+
+// ════════════════════════════════════════════════════════
+// WFM — STAFFING & DIMENSIONING (TPH-based, per market)
+// ════════════════════════════════════════════════════════
+
+var CHART_PROJ  = null;
+var WFM_MARKET  = 'MX';   // staffing pane market
+var DIM_MARKET  = 'MX';   // dimension pane market
+
+// ── Tab switcher ──
+function wfmTab(tab){
+  document.getElementById('wfm-btn-staffing').classList.toggle('active',  tab==='staffing');
+  document.getElementById('wfm-btn-dimension').classList.toggle('active', tab==='dimension');
+  document.getElementById('wfm-staffing').classList.toggle('active',  tab==='staffing');
+  document.getElementById('wfm-dimension').classList.toggle('active', tab==='dimension');
+  if(tab==='staffing')  renderStaffingGrid();
+  if(tab==='dimension') renderDimension();
+}
+
+// ── Market selectors ──
+function setWfmMarket(m){
+  WFM_MARKET = m;
+  document.getElementById('wfm-mp-MX').classList.toggle('active', m==='MX');
+  document.getElementById('wfm-mp-US').classList.toggle('active', m==='US');
+  renderStaffingGrid();
+}
+function setDimMarket(m){
+  DIM_MARKET = m;
+  document.getElementById('dim-mp-MX').classList.toggle('active', m==='MX');
+  document.getElementById('dim-mp-US').classList.toggle('active', m==='US');
+  // Update HC field with default for market
+  var defaults = {'MX':24, 'US':46};
+  document.getElementById('dim-hc').value = defaults[m] || 24;
+  document.getElementById('dim-hc-label').textContent = m;
+  document.getElementById('dim-chart-title').textContent = 'Proyección de HC — Mercado ' + m;
+  renderDimension();
+}
+
+// ── Core staffing formula (TPH-based) ──
+// agents_productive = ceil(vol_per_hour / tph_base)
+// agents_scheduled  = ceil(productive / (1 - absenteeism/100))
+function calcStaffing(volPerHour, tphBase, absentPct){
+  if(volPerHour <= 0) return {prod:0, sched:0, occ:0};
+  var prod  = Math.ceil(volPerHour / tphBase);
+  var sched = Math.ceil(prod / (1 - absentPct/100));
+  var occ   = +(volPerHour / (prod * tphBase) * 100).toFixed(1);
+  return {prod:prod, sched:sched, occ:Math.min(occ,100)};
+}
+
+// ── Erlang C Service Level estimate ──
+function erlangC(N, A){
+  if(N <= A) return 1;
+  var L = 1; for(var i=1; i<=N; i++) L *= A/i;
+  var sum=1, term=1;
+  for(var k=1; k<N; k++){ term*=A/k; sum+=term; }
+  var denom = sum + L*(N/(N-A));
+  return (L*(N/(N-A)))/denom;
+}
+function estSL(prod, volPerHour, ahtMin, slaTargetSec){
+  if(prod<=0||volPerHour<=0) return 100;
+  var A      = (volPerHour/60)*ahtMin;
+  var ahtSec = ahtMin*60;
+  if(prod<=A) return 0;
+  var ec = erlangC(prod, A);
+  return +(Math.max(0,1-ec*Math.exp(-(prod-A)*slaTargetSec/ahtSec))*100).toFixed(1);
+}
+
+// ── Build hourly iv aggregates for a market ──
+function getIvByHour(market){
+  // Use wfmDates(market) — independent of main header market filter
+  var activeDates = wfmDates(market);
+  var wdDates = activeDates.filter(function(d){
+    var dow = new Date(d+'T12:00:00').getDay();
+    return dow>=1 && dow<=5;
+  });
+  var nDays = Math.max(1, wdDates.length);
+
+  var ivRows = DB.iv.filter(function(r){
+    return wdDates.includes(r.d) && r.market===market;
+  });
+  var byH = {};
+  ivRows.forEach(function(r){
+    if(!byH[r.h]) byH[r.h]={h:r.h,s:0,eng:0,oh:0};
+    byH[r.h].s   += r.s;
+    byH[r.h].eng += r.eng;
+    byH[r.h].oh  += r.oh;
+  });
+  var result = {};
+  Object.keys(byH).forEach(function(h){
+    var d = byH[h];
+    result[+h] = {
+      volDay:  Math.round(d.s / nDays),
+      ahtMin:  d.s>0 ? +(d.eng/d.s).toFixed(1) : 0,
+      tphReal: d.oh>0 ? +(d.s/d.oh).toFixed(1)  : 0,
+    };
+  });
+  return result;
+}
+
+// ── STAFFING GRID ──
+function renderStaffingGrid(){
+  var tphBase   = +document.getElementById('wfm-tph').value     || 17;
+  var absentPct = +document.getElementById('wfm-absent').value  || 5;
+  var slaT      = +document.getElementById('wfm-sla-t').value   || 30;
+  var slaPct    = +document.getElementById('wfm-sla-pct').value || 95;
+  var mkt       = WFM_MARKET;
+
+  var byH  = getIvByHour(mkt);
+  var opH  = [10,11,12,13,14,15,16,17,18,19,20,21,22];
+
+  // Market summary cards — use daily dimensioning formula for consistency
+  // CAP/agent/day = 125 chats  |  shrinkage 5%  |  6d/week factor = 7/6
+  var CAP_DAY_S   = 125;
+  var SHRINK_S    = 0.05;
+  var COV_S       = 7/6;
+  var totalVol=0, peakHourVol=0, peakHour='-';
+  opH.forEach(function(h){
+    var d = byH[h] || {volDay:0,ahtMin:0,tphReal:0};
+    totalVol += d.volDay;
+    if(d.volDay > peakHourVol){ peakHourVol=d.volDay; peakHour=String(h).padStart(2,'0')+':00'; }
+  });
+  // Daily dimensioning (same formula as dimensioning tab)
+  var prodDay   = Math.ceil(totalVol / CAP_DAY_S);          // HC productivo
+  var schedDay  = Math.ceil(prodDay  / (1 - SHRINK_S));     // HC programado/día
+  var totalHC   = Math.ceil(schedDay * COV_S);              // HC TOTAL con 6d/semana
+  var mktColor  = mkt==='MX'?'var(--shein)':'#3f83f8';
+  var mktFlag   = mkt==='MX'?'🇨🇳':'🇺🇸';
+  document.getElementById('wfm-mkt-cards').innerHTML = [
+    {t:'Mercado activo',
+      v:mktFlag+' '+mkt,
+      s:'datos del período filtrado (Lun–Vie)',
+      c:mktColor},
+    {t:'Vol/día promedio (Lun–Vie)',
+      v:totalVol.toLocaleString('es-CO'),
+      s:'chats promedio días hábiles',
+      c:'var(--cyan)'},
+    {t:'HC productivo / día',
+      v:prodDay+' ag.',
+      s:'ceil('+totalVol+' / 125 cap.)',
+      c:'var(--yellow)'},
+    {t:'HC programado / día',
+      v:schedDay+' ag.',
+      s:'ceil('+prodDay+' / 0.95) — shrinkage 5%',
+      c:'var(--orange)'},
+    {t:'🎯 HC TOTAL requerido',
+      v:totalHC+' ag.',
+      s:'ceil('+schedDay+' × 7/6) — 6 días/semana',
+      c:'var(--cyan)'},
+    {t:'Hora pico',
+      v:peakHour,
+      s:peakHourVol+' chats esa hora',
+      c:'var(--t2)'},
+  ].map(function(c){
+    return '<div class="proj-card" style="border-color:'+c.c+'22;">' +
+      '<div class="pc-title">'+c.t+'</div>' +
+      '<div class="pc-val" style="color:'+c.c+'">'+c.v+'</div>' +
+      '<div class="pc-sub">'+c.s+'</div></div>';
+  }).join('');
+
+  // Table rows
+  var rows = '';
+  opH.forEach(function(h){
+    var d   = byH[h] || {volDay:0,ahtMin:0,tphReal:0};
+    var res = calcStaffing(d.volDay, tphBase, absentPct);
+    var sl  = d.ahtMin>0 ? estSL(res.prod, d.volDay, d.ahtMin, slaT) : 100;
+
+    var chipCls = d.volDay===0?'ag-low':sl>=slaPct?'ag-ok':sl>=slaPct-10?'ag-warn':'ag-crit';
+    var occClr  = res.occ<=85?'var(--teal)':res.occ<=95?'var(--yellow)':'var(--red)';
+    var slClr   = sl>=slaPct?'var(--teal)':sl>=slaPct-5?'var(--yellow)':'var(--red)';
+    var tphClr  = d.tphReal>=tphBase?'var(--teal)':d.tphReal>=tphBase*.9?'var(--yellow)':'var(--red)';
+
+    rows += '<tr>' +
+      '<td style="text-align:left;font-weight:700;color:var(--t1);font-size:12px;">'+String(h).padStart(2,'0')+':00</td>' +
+      '<td style="color:var(--t2)">'+(d.volDay||'—')+'</td>' +
+      '<td style="color:var(--t2)">'+(d.ahtMin||'—')+'</td>' +
+      '<td style="color:'+tphClr+'">'+(d.tphReal||'—')+'</td>' +
+      '<td><span class="ag-chip '+chipCls+'">'+(res.prod||'—')+'</span></td>' +
+      '<td style="color:var(--orange);font-size:10px;">'+(res.prod>0?'+'+( res.sched-res.prod):'—')+'</td>' +
+      '<td style="font-weight:700;color:var(--cyan);font-size:14px;">'+(res.sched||'—')+'</td>' +
+      '<td style="color:'+occClr+'">'+(res.occ>0?res.occ+'%':'—')+'</td>' +
+      '<td style="color:'+slClr+'">'+(d.ahtMin>0?sl+'%':'—')+'</td>' +
+      '</tr>';
+  });
+  document.getElementById('staffing-body').innerHTML = rows;
+}
+
+// ── DIMENSIONING & PROJECTION ──
+function renderDimension(){
+  var mkt      = DIM_MARKET;
+  var hcActual = +document.getElementById('dim-hc').value     || (mkt==='MX'?24:46);
+  var growth   = +document.getElementById('dim-growth').value || 10;
+  var nMonths  = +document.getElementById('dim-months').value || 6;
+
+  // Fixed operational parameters
+  var TPH          = 17;      // chats por hora por agente
+  var HOURS_DAY    = 7.33;    // horas productivas por día
+  var SHRINKAGE    = 0.05;    // 5%
+  var CAP_DAY      = 125;     // chats por agente por día (TPH × HOURS_DAY ≈ 125)
+  var DAYS_WORK    = 6;       // días que trabaja cada agente por semana
+  var DAYS_OPS     = 7;       // días que opera la campaña por semana
+  var COV_FACTOR   = DAYS_OPS / DAYS_WORK; // 7/6 = 1.1667 — factor de cobertura
+
+  // Use SAME dates as the staffing grid — filteredDates() + weekdays only
+  // This ensures both tabs show consistent numbers
+  function isWeekday(dateStr){
+    var dow = new Date(dateStr+'T12:00:00').getDay();
+    return dow>=1 && dow<=5;
+  }
+  var activeDates = wfmDates(mkt);          // independent of header market filter
+  var wdDates     = activeDates.filter(isWeekday);
+  var nWdDays     = Math.max(1, wdDates.length);
+
+  var allIvs  = DB.iv.filter(function(r){ return r.market===mkt && r.s>0; });
+  var wdIvs   = allIvs.filter(function(r){ return wdDates.includes(r.d); });
+
+  var totalVol  = wdIvs.reduce(function(a,r){ return a+r.s; }, 0);
+  var totalEng  = wdIvs.reduce(function(a,r){ return a+r.eng; }, 0);
+  var realAHT   = totalVol>0 ? +(totalEng/totalVol).toFixed(1) : 7;
+  var volPerDay = Math.round(totalVol / nWdDays);  // avg weekday volume (same base as staffing)
+
+  // Peak hourly volume — same weekday dates
+  var byH2 = {};
+  wdIvs.forEach(function(r){
+    if(!byH2[r.h]) byH2[r.h]=0;
+    byH2[r.h]+=r.s;
+  });
+  var peakHourVol = 0;
+  Object.values(byH2).forEach(function(v){ if(v>peakHourVol) peakHourVol=v; });
+  var peakVolDay = Math.round(peakHourVol / nWdDays);
+
+  // Daily staffing formula
+  // productive_agents = ceil(vol_day / CAP_DAY)
+  // scheduled_agents  = ceil(productive / (1 - SHRINKAGE))
+  var prodCurrent  = Math.ceil(volPerDay / CAP_DAY);
+  var schedCurrent = Math.ceil(prodCurrent / (1 - SHRINKAGE));
+  var totalHC      = Math.ceil(schedCurrent * COV_FACTOR); // 6 días/semana → 7/6
+  var gap          = hcActual - totalHC;   // gap vs HC TOTAL (no vs programado/día)
+  var mktFlag      = mkt==='MX'?'🇨🇳':'🇺🇸';
+  var mktColor     = mkt==='MX'?'var(--shein)':'#3f83f8';
+
+  // KPI cards
+  document.getElementById('dim-kpi-cards').innerHTML = [
+    {t:'Mercado',              v:mktFlag+' '+mkt,                    s:'análisis individual',                          c:mktColor},
+    {t:'Vol/día actual',       v:volPerDay.toLocaleString('es-CO'),  s:'promedio Lun–Vie ('+nWdDays+' días hábiles)',                   c:'var(--cyan)'},
+    {t:'AHT real promedio',    v:realAHT+' min',                     s:'basado en datos reales',                       c:'var(--purple)'},
+    {t:'HC productivo req.',   v:prodCurrent,                        s:'ceil('+volPerDay+' chats / '+CAP_DAY+')',       c:'var(--yellow)'},
+    {t:'HC programado / día',  v:schedCurrent,                       s:'ceil('+prodCurrent+' / 0.95) · shrinkage 5%',  c:'var(--orange)'},
+    {t:'🎯 HC TOTAL requerido', v:totalHC,
+      s:'ceil('+schedCurrent+' × 7/6) · 6 días/semana',
+      c:'var(--cyan)'},
+    {t:'HC disponible',        v:hcActual,                           s:'agentes actuales '+mkt,                        c:'var(--t2)'},
+    {t:'Gap (total)',
+      v:(gap>=0?'+':'')+gap,
+      s:gap>=0?'✓ Suficiente':'✗ Faltan '+Math.abs(gap)+' agentes',
+      c:gap>=0?'var(--teal)':'var(--red)'},
+  ].map(function(c){
+    return '<div class="proj-card" style="border-color:'+c.c+'22;">' +
+      '<div class="pc-title">'+c.t+'</div>' +
+      '<div class="pc-val" style="color:'+c.c+'">'+c.v+'</div>' +
+      '<div class="pc-sub">'+c.s+'</div></div>';
+  }).join('');
+
+  // Projection months
+  var MNAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var now = new Date();
+  var labels=[], volSeries=[], hcProdSeries=[], hcSchedSeries=[], hcAvailSeries=[];
+  var tbodyRows = '';
+
+  for(var m=0; m<=nMonths; m++){
+    var dt       = new Date(now.getFullYear(), now.getMonth()+m, 1);
+    var mName    = MNAMES[dt.getMonth()]+' '+dt.getFullYear();
+    var factor   = Math.pow(1 + growth/100, m);
+    var volD     = Math.round(volPerDay * factor);
+    var prod     = Math.ceil(volD / CAP_DAY);
+    var sched    = Math.ceil(prod / (1 - SHRINKAGE));
+    var total    = Math.ceil(sched * COV_FACTOR);  // 7/6 — 6 días/semana
+    var g        = hcActual - total;
+    var action   = g>=5  ? '✓ Capacidad OK'
+                 : g>=0  ? '⚠ Monitorear'
+                 : g>=-4 ? '🔶 Contratar '+Math.abs(g)+' ag.'
+                 :         '🚨 Urgente: +'+Math.abs(g)+' ag.';
+
+    labels.push(mName);
+    volSeries.push(volD);
+    hcProdSeries.push(prod);
+    hcSchedSeries.push(total);   // chart shows HC TOTAL
+    hcAvailSeries.push(hcActual);
+
+    tbodyRows += '<tr>' +
+      '<td style="font-weight:700;color:var(--t1)">'+mName+(m===0?' ★':'')+' </td>'+
+      '<td style="color:var(--t2)">'+volD.toLocaleString('es-CO')+'</td>'+
+      '<td style="color:var(--t2)">'+CAP_DAY+'</td>'+
+      '<td style="color:var(--yellow)">'+prod+'</td>'+
+      '<td style="color:var(--orange)">'+sched+'</td>'+
+      '<td style="color:var(--cyan);font-weight:700;font-size:13px;">'+total+'</td>'+
+      '<td style="color:var(--t2)">'+hcActual+'</td>'+
+      '<td class="'+(g>=0?'gap-neg':'gap-pos')+'">'+(g>0?'+':'')+g+'</td>'+
+      '<td style="font-size:10px;color:var(--t3)">'+action+'</td>'+
+      '</tr>';
+  }
+  document.getElementById('scenario-body').innerHTML = tbodyRows;
+
+  // Chart
+  if(CHART_PROJ) CHART_PROJ.destroy();
+  CHART_PROJ = new Chart(document.getElementById('chart-projection').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:labels,
+      datasets:[
+        {label:'Vol/día estimado',
+         data:volSeries,
+         backgroundColor:mkt==='MX'?'rgba(255,102,144,0.18)':'rgba(63,131,248,0.18)',
+         borderColor:mkt==='MX'?'rgba(255,102,144,0.8)':'rgba(63,131,248,0.8)',
+         borderWidth:1.5,borderRadius:3,yAxisID:'y2',order:4},
+        {label:'HC productivo requerido',
+         data:hcProdSeries,type:'line',
+         borderColor:'#ffd166',backgroundColor:'rgba(255,209,102,0.06)',
+         fill:false,tension:0.35,pointRadius:3,borderWidth:1.5,
+         borderDash:[4,3],yAxisID:'y',order:3},
+        {label:'HC TOTAL requerido (6d/sem)',
+         data:hcSchedSeries,type:'line',
+         borderColor:'#ff4757',backgroundColor:'rgba(255,71,87,0.07)',
+         fill:true,tension:0.35,pointRadius:4,borderWidth:2,yAxisID:'y',order:2},
+        {label:'HC disponible actual',
+         data:hcAvailSeries,type:'line',
+         borderColor:'#00e5b3',backgroundColor:'transparent',
+         borderDash:[6,4],pointRadius:3,borderWidth:2,yAxisID:'y',order:1},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#7a98c0',font:{size:10,family:'JetBrains Mono'},boxWidth:12}},
+        tooltip:{
+          backgroundColor:'#1e2d48',
+          titleFont:{family:'JetBrains Mono',size:10},
+          bodyFont:{family:'JetBrains Mono',size:10},
+          borderColor:'#2a3a5a',borderWidth:1,
+          callbacks:{
+            afterBody:function(ctx){
+              var i=ctx[0].dataIndex;
+              var tot=hcSchedSeries[i];
+              return ['','Prod: '+hcProdSeries[i]+' · HC total: '+tot+' ag. · Gap: '+(hcActual-tot)];
+            }
+          }
+        },
+        title:{
+          display:true,
+          text:mktFlag+' Mercado '+mkt+' · TPH '+TPH+' · '+HOURS_DAY+'H/día · Shrinkage '+SHRINKAGE*100+'% · Cap '+CAP_DAY+' chats/ag/día',
+          color:'#7a98c0',font:{size:9,family:'JetBrains Mono'}
+        },
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#3b4f6b',font:{size:9,family:'JetBrains Mono'}}},
+        y:{position:'left',
+           grid:{color:'rgba(255,255,255,0.04)'},
+           ticks:{color:'#3b4f6b',font:{size:9,family:'JetBrains Mono'}},
+           title:{display:true,text:'Agentes',color:'#3b4f6b',font:{size:9}}},
+        y2:{position:'right',grid:{display:false},
+            ticks:{color:'#3b4f6b',font:{size:9,family:'JetBrains Mono'}},
+            title:{display:true,text:'Vol/día',color:'#3b4f6b',font:{size:9}}},
+      }
+    }
+  });
+}
+
+
 </script>
 
 <!-- ── UPLOAD FAB ── -->
@@ -1736,15 +2359,15 @@ function setProgress(pct){
       <div style="margin-top:10px;">
         <div class="mfield">
           <label>Usuario GitHub</label>
-          <input type="text" id="gh-user" placeholder="tu-usuario" oninput="saveGHConfig()">
+          <input type="text" id="gh-user" readonly style="opacity:.5;cursor:default;" title="Configurado en el código">
         </div>
         <div class="mfield">
           <label>Repositorio</label>
-          <input type="text" id="gh-repo" placeholder="shein-dashboard" oninput="saveGHConfig()">
+          <input type="text" id="gh-repo" readonly style="opacity:.5;cursor:default;" title="Configurado en el código">
         </div>
         <div class="mfield">
           <label>Rama</label>
-          <input type="text" id="gh-branch" placeholder="main" oninput="saveGHConfig()">
+          <input type="text" id="gh-branch" readonly style="opacity:.5;cursor:default;" title="Configurado en el código">
         </div>
         <div class="mfield">
           <label>Personal Access Token (PAT)</label>
